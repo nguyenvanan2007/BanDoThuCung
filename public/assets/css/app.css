@@ -1,0 +1,169 @@
+:root {
+    color-scheme: light;
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: #23332d;
+    background: #fbfaf6;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    min-width: 320px;
+    min-height: 100vh;
+    margin: 0;
+}
+
+.site-header,
+.site-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem clamp(1.25rem, 6vw, 6rem);
+}
+
+.site-header {
+    border-bottom: 1px solid #e8e8df;
+}
+
+.brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    color: inherit;
+    font-size: 1.2rem;
+    font-weight: 750;
+    text-decoration: none;
+}
+
+.brand-mark {
+    display: grid;
+    width: 2rem;
+    height: 2rem;
+    place-items: center;
+    border-radius: 50%;
+    color: #fff;
+    background: #417b60;
+}
+
+.site-tagline,
+.site-footer {
+    color: #68766f;
+    font-size: 0.9rem;
+}
+
+.hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(220px, 0.8fr);
+    align-items: center;
+    gap: 3rem;
+    max-width: 1200px;
+    min-height: 480px;
+    margin: 0 auto;
+    padding: 5rem 2rem;
+}
+
+.eyebrow {
+    color: #417b60;
+    font-size: 0.8rem;
+    font-weight: 750;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+h1,
+h2,
+p {
+    margin-top: 0;
+}
+
+h1 {
+    max-width: 680px;
+    margin-bottom: 1rem;
+    font-size: clamp(2.4rem, 6vw, 4.5rem);
+    line-height: 1.08;
+}
+
+.hero-description,
+.catalog-placeholder > p:last-child {
+    max-width: 560px;
+    color: #68766f;
+    font-size: 1.1rem;
+    line-height: 1.7;
+}
+
+.button {
+    display: inline-block;
+    margin-top: 0.75rem;
+    padding: 0.85rem 1.2rem;
+    border-radius: 0.5rem;
+    color: #fff;
+    background: #417b60;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.button:hover {
+    background: #315f49;
+}
+
+.hero-art {
+    display: grid;
+    min-height: 280px;
+    place-items: center;
+    border-radius: 48% 52% 43% 57%;
+    background: #edf1e4;
+}
+
+.pet-icon {
+    font-size: clamp(5rem, 12vw, 9rem);
+}
+
+.catalog-placeholder {
+    max-width: 1200px;
+    margin: 0 auto 4rem;
+    padding: 2rem;
+    border: 1px solid #e8e8df;
+    border-radius: 1rem;
+    background: #fff;
+}
+
+.catalog-placeholder h2 {
+    margin-bottom: 0.6rem;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+}
+
+.site-footer {
+    justify-content: center;
+    border-top: 1px solid #e8e8df;
+}
+
+.site-footer p {
+    margin: 0;
+}
+
+@media (max-width: 700px) {
+    .site-header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .site-tagline {
+        margin: 0;
+    }
+
+    .hero {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        padding-top: 3.5rem;
+        padding-bottom: 3.5rem;
+    }
+
+    .hero-art {
+        min-height: 200px;
+    }
+}
