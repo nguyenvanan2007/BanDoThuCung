@@ -8,6 +8,12 @@ use RuntimeException;
 
 class Controller
 {
+    protected function redirect(string $location): never
+    {
+        header('Location: ' . $location, true, 303);
+        exit;
+    }
+
     protected function render(string $view, array $data = []): void
     {
         $viewsDirectory = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'Views';

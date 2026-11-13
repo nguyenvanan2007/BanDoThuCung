@@ -5,15 +5,16 @@
         <p class="hero-description">
             Pet House đang được xây dựng để giúp bạn tìm và chọn mua thức ăn cho thú cưng.
         </p>
-        <a class="button" href="#catalog">Khám phá cửa hàng</a>
+        <a class="button" href="/products">Khám phá cửa hàng</a>
     </div>
     <div class="hero-art" aria-hidden="true">
         <span class="pet-icon">🐾</span>
     </div>
 </section>
 
-<section class="catalog-placeholder" id="catalog">
+<section class="catalog-placeholder">
     <p class="eyebrow">Pet House</p>
-    <h2>Cửa hàng đang được chuẩn bị</h2>
-    <p>Danh sách thức ăn và các bộ lọc sản phẩm sẽ được bổ sung ở giai đoạn tiếp theo.</p>
+    <h2>Xem thử danh mục sản phẩm</h2>
+    <p>Danh sách hiện dùng dữ liệu minh họa. Hãy mở cửa hàng để thử tìm kiếm, lọc và xem chi tiết.</p>
+    <a class="button" href="/products">Đến cửa hàng</a>
 </section>
