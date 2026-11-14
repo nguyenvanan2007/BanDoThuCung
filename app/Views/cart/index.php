@@ -80,7 +80,11 @@
         <aside class="cart-summary">
             <p>Tạm tính</p>
             <strong><?= e(format_vnd($total)) ?></strong>
-            <button class="button checkout-button" type="button" disabled>Đặt hàng ở giai đoạn tiếp theo</button>
+            <?php if (!$catalogDemoMode && !$hasDemoItems): ?>
+                <a class="button checkout-button" href="/checkout">Tiến hành thanh toán</a>
+            <?php else: ?>
+                <button class="button checkout-button" type="button" disabled>Đặt hàng không khả dụng với dữ liệu mẫu</button>
+            <?php endif; ?>
             <a class="reset-link" href="/products">Tiếp tục xem sản phẩm</a>
         </aside>
     <?php endif; ?>

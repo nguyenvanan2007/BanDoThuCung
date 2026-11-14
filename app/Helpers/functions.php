@@ -36,3 +36,15 @@ function take_flash(): ?array
 
     return is_array($flash) ? $flash : null;
 }
+
+function order_status_label(string $status): string
+{
+    return match ($status) {
+        'pending' => 'Chờ xác nhận',
+        'confirmed' => 'Đã xác nhận',
+        'shipping' => 'Đang giao',
+        'completed' => 'Hoàn thành',
+        'cancelled' => 'Đã hủy',
+        default => 'Không xác định',
+    };
+}

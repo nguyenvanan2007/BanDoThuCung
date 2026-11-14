@@ -4,7 +4,7 @@ Khung ứng dụng PHP 8.1+, OOP/MVC, Composer PSR-4, PDO và MySQL. Website t�
 
 ## Trạng thái hiện tại
 
-Khung MVC, trang chủ, catalog sản phẩm (demo/MySQL), đăng ký/đăng nhập khách hàng, đăng xuất có CSRF, trang tài khoản và giỏ hàng session cho khách/đã đăng nhập đã có. Đặt hàng và quản trị chưa được triển khai; nút đặt hàng trong giỏ đang bị vô hiệu hóa.
+Khung MVC, trang chủ, catalog sản phẩm (demo/MySQL), đăng ký/đăng nhập khách hàng, đăng xuất có CSRF, trang tài khoản, giỏ hàng session, đặt đơn COD và lịch sử đơn hàng đã có. Quản trị chưa được triển khai.
 
 ## Chạy cục bộ
 
@@ -19,7 +19,7 @@ Khung MVC, trang chủ, catalog sản phẩm (demo/MySQL), đăng ký/đăng nh�
 
 5. Mở `http://127.0.0.1:8000`.
 
-Mặc định `CATALOG_SOURCE=demo` để xem catalog mà không cần database. Các chức năng tài khoản cần MySQL: import `database/schema.sql`, cấu hình thông tin MySQL trong `.env`; tùy chọn import `database/seed_demo.sql` một lần để có sản phẩm minh họa. Đặt `CATALOG_SOURCE=database` để catalog đọc sản phẩm từ MySQL. Schema tạo bảng `users` và `products`; người đăng ký chỉ được tạo với vai trò khách hàng. Không có tài khoản admin mặc định. Sản phẩm seed được đánh dấu DEMO; không dùng làm hàng hóa thật. Nếu `pet_shop` hoặc các bảng này đã tồn tại, hãy sao lưu và kiểm tra trước khi import; script khởi tạo không thay thế migration. Lỗi kết nối/schema sẽ được báo rõ, không tự chuyển về dữ liệu demo.
+Mặc định `CATALOG_SOURCE=demo` để xem catalog mà không cần database. Tài khoản, thanh toán và lịch sử đơn cần MySQL: import `database/schema.sql`, cấu hình MySQL trong `.env`; tùy chọn import `database/seed_demo.sql` một lần để có sản phẩm minh họa. Đặt `CATALOG_SOURCE=database` để catalog đọc sản phẩm từ MySQL. Schema tạo bảng `users`, `products`, `orders` và `order_items`; khách đăng nhập mới được đặt hàng, phương thức hiện tại là COD, tồn kho và giá được xác thực lại trong transaction. Sản phẩm seed được đánh dấu DEMO và không thể đặt hàng. Nếu database hoặc bảng đã tồn tại, hãy sao lưu và kiểm tra trước khi import; script khởi tạo không thay thế migration. Lỗi kết nối/schema sẽ được báo rõ, không tự chuyển về dữ liệu demo.
 
 Không đưa `.env` hoặc thông tin kết nối lên Git.
 

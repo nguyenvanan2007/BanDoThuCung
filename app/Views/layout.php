@@ -19,6 +19,7 @@
             <a href="/cart">Giỏ hàng</a>
             <?php if (isset($_SESSION['user']) && is_array($_SESSION['user'])): ?>
                 <a href="/account">Tài khoản</a>
+                <a href="/orders">Đơn hàng</a>
                 <form class="logout-form" method="post" action="/logout">
                     <input type="hidden" name="_csrf_token" value="<?= e(csrf_token()) ?>">
                     <button class="nav-button" type="submit">Đăng xuất</button>

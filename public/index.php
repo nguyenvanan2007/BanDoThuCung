@@ -7,6 +7,8 @@ use App\Controllers\NotFoundController;
 use App\Controllers\ProductController;
 use App\Controllers\AuthController;
 use App\Controllers\CartController;
+use App\Controllers\CheckoutController;
+use App\Controllers\OrderController;
 use App\Controllers\ServiceUnavailableController;
 use App\Models\ProductCatalogFactory;
 
@@ -30,6 +32,49 @@ try {
 
     $route = '/' . trim($requestPath, '/');
     $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+
+    if ($route === '/checkout') {
+        if (!in_array($method, ['GET', 'POST'], true)) {
+            http_response_code(405);
+            header('Allow: GET, POST');
+            echo '<!doctype html><html lang="vi"><meta charset="utf-8"><title>Phương thức không được hỗ trợ</title>'
+                . '<h1>Phương thức không được hỗ trợ</h1></html>';
+            exit;
+        }
+
+        if (!isset($_SESSION['user']) || !is_array($_SESSION['user'])
+            || ($_SESSION['user']['role'] ?? '') !== 'customer') {
+            $_SESSION['_flash'] = [
+                'type' => 'error',
+                'message' => 'Vui lòng đăng nhập tài khoản khách hàng để thanh toán.',
+            ];
+            header('Location: /login', true, 303);
+            exit;
+        }
+
+        $checkoutController = new CheckoutController(ProductCatalogFactory::create());
+
+        if ($method === 'GET') {
+            $checkoutController->show();
+            exit;
+        }
+
+        if ($method === 'POST') {
+            $checkoutController->submit();
+            exit;
+        }
+
+    }
+
+    if ($route === '/orders' && $method === 'GET') {
+        (new OrderController())->index();
+        exit;
+    }
+
+    if (preg_match('~\A/orders/([1-9][0-9]*)\z~', $route, $matches) === 1 && $method === 'GET') {
+        (new OrderController())->show($matches[1]);
+        exit;
+    }
 
     if (in_array($route, ['/cart', '/cart/add', '/cart/update', '/cart/remove'], true)) {
         $cartController = new CartController(ProductCatalogFactory::create());

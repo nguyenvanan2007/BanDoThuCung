@@ -622,6 +622,128 @@ h1 {
     text-align: center;
 }
 
+.checkout-layout,
+.orders-page,
+.order-detail-page {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    align-items: start;
+    gap: 1.5rem;
+    max-width: 1200px;
+    margin: 0 auto 5rem;
+    padding: 0 2rem;
+}
+
+.checkout-main {
+    min-width: 0;
+}
+
+.checkout-form textarea {
+    width: 100%;
+    min-height: 7rem;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid #d5dcd5;
+    border-radius: 0.45rem;
+    font: inherit;
+    resize: vertical;
+}
+
+.checkout-line,
+.checkout-total {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    color: #52635a;
+    font-size: 0.9rem;
+}
+
+.checkout-line span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.checkout-line strong,
+.checkout-total strong {
+    color: #23332d;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.checkout-total {
+    padding-top: 0.8rem;
+    border-top: 1px solid #e8e8df;
+    font-size: 1rem;
+    font-weight: 750;
+}
+
+.checkout-total strong {
+    font-size: 1.2rem;
+}
+
+.orders-page,
+.order-detail-page {
+    grid-template-columns: 1fr;
+}
+
+.orders-table-wrap {
+    overflow-x: auto;
+    border: 1px solid #e8e8df;
+    border-radius: 0.75rem;
+    background: #fff;
+}
+
+.orders-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.orders-table th,
+.orders-table td {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid #e8e8df;
+    white-space: nowrap;
+}
+
+.orders-table th {
+    color: #52635a;
+    background: #f5f6f1;
+    font-size: 0.85rem;
+}
+
+.orders-table tr:last-child td {
+    border-bottom: 0;
+}
+
+.orders-table a {
+    color: #417b60;
+    font-weight: 650;
+}
+
+.order-detail-page {
+    grid-template-columns: minmax(0, 1fr) 340px;
+}
+
+.order-detail-card {
+    display: grid;
+    align-content: start;
+    gap: 0.8rem;
+    padding: 1.25rem;
+    border: 1px solid #e8e8df;
+    border-radius: 0.85rem;
+    background: #fff;
+}
+
+.order-detail-card h2,
+.order-detail-card p {
+    margin: 0;
+}
+
+.order-detail-card p {
+    color: #52635a;
+    line-height: 1.6;
+}
+
 .site-footer {
     justify-content: center;
     border-top: 1px solid #e8e8df;
@@ -661,7 +783,9 @@ h1 {
 
     .catalog-layout,
     .product-detail,
-    .cart-page {
+    .cart-page,
+    .checkout-layout,
+    .order-detail-page {
         grid-template-columns: 1fr;
     }
 
@@ -673,7 +797,10 @@ h1 {
     .catalog-layout,
     .product-detail,
     .auth-panel,
-    .cart-page {
+    .cart-page,
+    .checkout-layout,
+    .orders-page,
+    .order-detail-page {
         padding-right: 1.25rem;
         padding-left: 1.25rem;
     }
