@@ -8,9 +8,13 @@
 </section>
 
 <article class="product-detail">
-    <div class="product-detail-art" aria-hidden="true">
-        <span><?= e($product['icon']) ?></span>
-        <small>Biểu tượng minh họa</small>
+    <div class="product-detail-art">
+        <?php if ($product['imagePath'] !== null): ?>
+            <img src="<?= e($product['imagePath']) ?>" alt="<?= e($product['name']) ?>">
+        <?php else: ?>
+            <span aria-hidden="true"><?= e($product['icon']) ?></span>
+            <small>Chưa có ảnh sản phẩm</small>
+        <?php endif; ?>
     </div>
     <div class="product-detail-copy">
         <span class="product-label"><?= e($product['speciesLabel']) ?> · <?= e($product['categoryLabel']) ?></span>

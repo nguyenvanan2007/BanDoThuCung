@@ -24,7 +24,12 @@
                 <tbody>
                     <?php foreach ($order['items'] as $item): ?>
                         <tr>
-                            <td><?= e($item['product_name']) ?></td>
+                            <td class="order-product-name">
+                                <?php if (!empty($item['product_image_path'])): ?>
+                                    <img src="<?= e($item['product_image_path']) ?>" alt="" loading="lazy" decoding="async">
+                                <?php endif; ?>
+                                <span><?= e($item['product_name']) ?></span>
+                            </td>
                             <td><?= e($item['product_sku']) ?></td>
                             <td><?= e($item['quantity']) ?></td>
                             <td><?= e(format_vnd((int) $item['unit_price_vnd'])) ?></td>

@@ -19,6 +19,7 @@ final class DemoProductCatalog implements ProductCatalogInterface
             'stockQuantity' => 10,
             'icon' => '🐶',
             'description' => 'Dữ liệu minh họa, không phải thông tin hàng hóa thật.',
+            'imagePath' => '/assets/images/products/pedigree-dry-dog.jpg',
             'isDemo' => true,
         ],
         [
@@ -33,6 +34,7 @@ final class DemoProductCatalog implements ProductCatalogInterface
             'stockQuantity' => 10,
             'icon' => '🐶',
             'description' => 'Dữ liệu minh họa, không phải thông tin hàng hóa thật.',
+            'imagePath' => '/assets/images/products/pedigree-wet-dog.jpg',
             'isDemo' => true,
         ],
         [
@@ -47,6 +49,7 @@ final class DemoProductCatalog implements ProductCatalogInterface
             'stockQuantity' => 10,
             'icon' => '🐱',
             'description' => 'Dữ liệu minh họa, không phải thông tin hàng hóa thật.',
+            'imagePath' => '/assets/images/products/cat-food-bowl.jpg',
             'isDemo' => true,
         ],
         [
@@ -61,20 +64,22 @@ final class DemoProductCatalog implements ProductCatalogInterface
             'stockQuantity' => 10,
             'icon' => '🐱',
             'description' => 'Dữ liệu minh họa, không phải thông tin hàng hóa thật.',
+            'imagePath' => '/assets/images/products/cat-wet-food.jpg',
             'isDemo' => true,
         ],
         [
             'id' => '5',
-            'sku' => 'DEMO-DOG-WET-C',
-            'name' => 'Thức ăn ướt cho chó — mẫu minh họa C',
+            'sku' => 'DEMO-DOG-DRY-C',
+            'name' => 'Thức ăn khô cho chó — mẫu minh họa C',
             'species' => 'dog',
             'speciesLabel' => 'Cho chó',
-            'category' => 'wet',
-            'categoryLabel' => 'Thức ăn ướt',
+            'category' => 'dry',
+            'categoryLabel' => 'Thức ăn khô',
             'price' => 56000,
             'stockQuantity' => 10,
             'icon' => '🐶',
             'description' => 'Dữ liệu minh họa, không phải thông tin hàng hóa thật.',
+            'imagePath' => '/assets/images/products/dog-eating-food.jpg',
             'isDemo' => true,
         ],
         [
@@ -89,6 +94,7 @@ final class DemoProductCatalog implements ProductCatalogInterface
             'stockQuantity' => 10,
             'icon' => '🐱',
             'description' => 'Dữ liệu minh họa, không phải thông tin hàng hóa thật.',
+            'imagePath' => '/assets/images/products/cat-food-kibble.jpg',
             'isDemo' => true,
         ],
     ];

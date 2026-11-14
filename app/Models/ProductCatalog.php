@@ -59,7 +59,7 @@ final class ProductCatalog implements ProductCatalogInterface
             default => 'name ASC, id ASC',
         };
 
-        $sql = 'SELECT id, sku, name, species, food_type, description, price_vnd, stock_quantity, is_demo'
+        $sql = 'SELECT id, sku, name, species, food_type, description, image_path, price_vnd, stock_quantity, is_demo'
             . ' FROM products WHERE ' . implode(' AND ', $conditions)
             . ' ORDER BY ' . $orderBy;
         $statement = $this->connection->prepare($sql);
@@ -74,7 +74,7 @@ final class ProductCatalog implements ProductCatalogInterface
     public function findById(string $id): ?array
     {
         $statement = $this->connection->prepare(
-            'SELECT id, sku, name, species, food_type, description, price_vnd, stock_quantity, is_demo'
+            'SELECT id, sku, name, species, food_type, description, image_path, price_vnd, stock_quantity, is_demo'
             . ' FROM products WHERE id = :id AND is_active = 1 LIMIT 1'
         );
         $statement->execute(['id' => $id]);
@@ -102,10 +102,12 @@ final class ProductCatalog implements ProductCatalogInterface
             'category' => $foodType,
             'categoryLabel' => $foodType === 'dry' ? 'Thức ăn khô' : 'Thức ăn ướt',
             'description' => (string) ($row['description'] ?? ''),
+            'imagePath' => safe_product_image_path($row['image_path'] ?? null),
             'price' => (int) $row['price_vnd'],
             'stockQuantity' => (int) $row['stock_quantity'],
             'icon' => $species === 'dog' ? '🐶' : '🐱',
             'isDemo' => (bool) $row['is_demo'],
         ];
     }
+
 }

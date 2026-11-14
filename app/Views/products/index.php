@@ -69,9 +69,13 @@
             <div class="product-grid">
                 <?php foreach ($products as $product): ?>
                     <a class="product-card" href="/products/<?= e($product['id']) ?>">
-                        <div class="product-art" aria-hidden="true">
-                            <span><?= e($product['icon']) ?></span>
-                            <small>Biểu tượng minh họa</small>
+                        <div class="product-art">
+                            <?php if ($product['imagePath'] !== null): ?>
+                                <img src="<?= e($product['imagePath']) ?>" alt="<?= e($product['name']) ?>" loading="lazy" decoding="async">
+                            <?php else: ?>
+                                <span aria-hidden="true"><?= e($product['icon']) ?></span>
+                                <small>Chưa có ảnh sản phẩm</small>
+                            <?php endif; ?>
                         </div>
                         <div class="product-card-body">
                             <span class="product-label">

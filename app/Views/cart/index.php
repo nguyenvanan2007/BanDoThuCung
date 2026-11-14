@@ -22,7 +22,11 @@
                 <?php $product = $item['product']; ?>
                 <article class="cart-item">
                     <div class="cart-item-art" aria-hidden="true">
-                        <?= $product === null ? '📦' : e($product['icon']) ?>
+                        <?php if ($product !== null && $product['imagePath'] !== null): ?>
+                            <img src="<?= e($product['imagePath']) ?>" alt="">
+                        <?php else: ?>
+                            <?= $product === null ? '📦' : e($product['icon']) ?>
+                        <?php endif; ?>
                     </div>
                     <div class="cart-item-details">
                         <?php if ($product === null): ?>

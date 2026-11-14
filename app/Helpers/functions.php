@@ -48,3 +48,13 @@ function order_status_label(string $status): string
         default => 'Không xác định',
     };
 }
+
+function safe_product_image_path(mixed $path): ?string
+{
+    if (!is_string($path)
+        || preg_match('~\A/assets/images/products/[A-Za-z0-9_-]+\.(?:jpe?g|png|webp)\z~i', $path) !== 1) {
+        return null;
+    }
+
+    return $path;
+}

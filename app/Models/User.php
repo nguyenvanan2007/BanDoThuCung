@@ -70,4 +70,18 @@ final class User
             'role' => (string) $user['role'],
         ];
     }
+
+    public function isActiveAdministrator(string $userId): bool
+    {
+        $statement = $this->connection->prepare(
+            'SELECT 1 FROM users WHERE id = :id AND role = :role AND is_active = :is_active LIMIT 1'
+        );
+        $statement->execute([
+            'id' => $userId,
+            'role' => 'admin',
+            'is_active' => 1,
+        ]);
+
+        return $statement->fetchColumn() !== false;
+    }
 }

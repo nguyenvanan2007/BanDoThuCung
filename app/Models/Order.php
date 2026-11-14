@@ -50,7 +50,7 @@ final class Order
                 ? ' FOR UPDATE'
                 : '';
             $selectProduct = $this->connection->prepare(
-                'SELECT id, sku, name, price_vnd, stock_quantity, is_active, is_demo'
+                'SELECT id, sku, name, image_path, price_vnd, stock_quantity, is_active, is_demo'
                 . ' FROM products WHERE id = :id' . $lockClause
             );
 
@@ -92,6 +92,7 @@ final class Order
                     'id' => (string) $product['id'],
                     'sku' => (string) $product['sku'],
                     'name' => (string) $product['name'],
+                    'imagePath' => safe_product_image_path($product['image_path'] ?? null) ?? '',
                     'price' => $price,
                     'quantity' => $quantity,
                     'subtotal' => $lineTotal,
@@ -133,9 +134,9 @@ final class Order
             );
             $insertItem = $this->connection->prepare(
                 'INSERT INTO order_items'
-                . ' (order_id, product_id, product_sku, product_name, quantity, unit_price_vnd, subtotal_vnd)'
+                .                 ' (order_id, product_id, product_sku, product_name, product_image_path, quantity, unit_price_vnd, subtotal_vnd)'
                 . ' VALUES'
-                . ' (:order_id, :product_id, :product_sku, :product_name, :quantity, :unit_price_vnd, :subtotal_vnd)'
+                . ' (:order_id, :product_id, :product_sku, :product_name, :product_image_path, :quantity, :unit_price_vnd, :subtotal_vnd)'
             );
 
             foreach ($products as $product) {
@@ -155,6 +156,7 @@ final class Order
                     'product_id' => $product['id'],
                     'product_sku' => $product['sku'],
                     'product_name' => $product['name'],
+                    'product_image_path' => $product['imagePath'],
                     'quantity' => $product['quantity'],
                     'unit_price_vnd' => $product['price'],
                     'subtotal_vnd' => $product['subtotal'],
@@ -203,11 +205,18 @@ final class Order
         }
 
         $items = $this->connection->prepare(
-            'SELECT product_sku, product_name, quantity, unit_price_vnd, subtotal_vnd'
+            'SELECT product_sku, product_name, product_image_path, quantity, unit_price_vnd, subtotal_vnd'
             . ' FROM order_items WHERE order_id = :order_id ORDER BY id ASC'
         );
         $items->execute(['order_id' => $orderId]);
-        $order['items'] = $items->fetchAll();
+        $order['items'] = array_map(
+            static function (array $item): array {
+                $item['product_image_path'] = safe_product_image_path($item['product_image_path'] ?? null) ?? '';
+
+                return $item;
+            },
+            $items->fetchAll()
+        );
 
         return $order;
     }

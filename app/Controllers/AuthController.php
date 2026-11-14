@@ -15,7 +15,7 @@ final class AuthController extends Controller
     public function loginForm(): void
     {
         if ($this->isAuthenticated()) {
-            $this->redirect('/account');
+            $this->redirect($this->authenticatedHome());
         }
 
         $this->render('auth/login', [
@@ -66,7 +66,7 @@ final class AuthController extends Controller
         session_regenerate_id(true);
         unset($_SESSION['_csrf_token']);
         $_SESSION['user'] = $user;
-        $this->redirect('/account');
+        $this->redirect($user['role'] === 'admin' ? '/admin' : '/account');
     }
 
     public function registerForm(): void
@@ -155,6 +155,10 @@ final class AuthController extends Controller
             $this->redirect('/login');
         }
 
+        if (($_SESSION['user']['role'] ?? '') === 'admin') {
+            $this->redirect('/admin');
+        }
+
         $this->render('auth/account', [
             'title' => 'Tài khoản | Pet House',
             'user' => $_SESSION['user'],
@@ -193,6 +197,11 @@ final class AuthController extends Controller
     private function isAuthenticated(): bool
     {
         return isset($_SESSION['user']) && is_array($_SESSION['user']);
+    }
+
+    private function authenticatedHome(): string
+    {
+        return ($_SESSION['user']['role'] ?? '') === 'admin' ? '/admin' : '/account';
     }
 
     private function postText(string $key, bool $trim = true): string

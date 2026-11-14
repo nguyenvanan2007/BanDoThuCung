@@ -1,7 +1,7 @@
 <section class="auth-panel">
     <p class="eyebrow">Pet House / Tài khoản</p>
     <h1>Đăng nhập</h1>
-    <p class="page-description">Đăng nhập để quản lý tài khoản và sử dụng các chức năng mua hàng khi được triển khai.</p>
+    <p class="page-description">Đăng nhập để mua thức ăn cho chó mèo, theo dõi đơn hàng hoặc quản trị cửa hàng.</p>
 
     <?php if ($errors !== []): ?>
         <div class="form-errors" role="alert">

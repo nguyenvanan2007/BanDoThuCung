@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Controllers\NotFoundController;
 use App\Controllers\ProductController;
 use App\Controllers\AuthController;
+use App\Controllers\AdminController;
 use App\Controllers\CartController;
 use App\Controllers\CheckoutController;
 use App\Controllers\OrderController;
@@ -31,6 +32,98 @@ try {
 
     $route = '/' . trim($requestPath, '/');
     $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+
+    if ($route === '/admin') {
+        if ($method === 'GET') {
+            (new AdminController())->dashboard();
+            exit;
+        }
+
+        http_response_code(405);
+        header('Allow: GET');
+        exit;
+    }
+
+    if ($route === '/admin/products') {
+        $adminController = new AdminController();
+        if ($method === 'GET') {
+            $adminController->products();
+            exit;
+        }
+        if ($method === 'POST') {
+            $adminController->createProduct();
+            exit;
+        }
+
+        http_response_code(405);
+        header('Allow: GET, POST');
+        exit;
+    }
+
+    if ($route === '/admin/products/new') {
+        if ($method === 'GET') {
+            (new AdminController())->newProduct();
+            exit;
+        }
+
+        http_response_code(405);
+        header('Allow: GET');
+        exit;
+    }
+
+    if (preg_match('~\A/admin/products/([1-9][0-9]*)\z~', $route, $matches) === 1) {
+        $adminController = new AdminController();
+        if ($method === 'GET') {
+            $adminController->editProduct($matches[1]);
+            exit;
+        }
+        if ($method === 'POST') {
+            $adminController->updateProduct($matches[1]);
+            exit;
+        }
+
+        http_response_code(405);
+        header('Allow: GET, POST');
+        exit;
+    }
+
+    if ($route === '/admin/orders') {
+        if ($method === 'GET') {
+            (new AdminController())->orders();
+            exit;
+        }
+
+        http_response_code(405);
+        header('Allow: GET');
+        exit;
+    }
+
+    if (preg_match('~\A/admin/orders/([1-9][0-9]*)/status\z~', $route, $matches) === 1) {
+        if ($method === 'POST') {
+            (new AdminController())->updateOrderStatus($matches[1]);
+            exit;
+        }
+
+        http_response_code(405);
+        header('Allow: POST');
+        exit;
+    }
+
+    if (preg_match('~\A/admin/orders/([1-9][0-9]*)\z~', $route, $matches) === 1) {
+        if ($method === 'GET') {
+            (new AdminController())->showOrder($matches[1]);
+            exit;
+        }
+
+        http_response_code(405);
+        header('Allow: GET');
+        exit;
+    }
+
+    if (str_starts_with($route, '/admin/')) {
+        (new NotFoundController())->show();
+        exit;
+    }
 
     if ($route === '/checkout') {
         if (!in_array($method, ['GET', 'POST'], true)) {
