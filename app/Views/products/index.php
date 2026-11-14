@@ -1,17 +1,10 @@
 <section class="page-heading">
-    <p class="eyebrow">Pet House / Cửa hàng</p>
     <h1>Thức ăn cho chó và mèo</h1>
     <p class="page-description">
         <?= $isDemoMode
             ? 'Tìm kiếm và lọc các sản phẩm minh họa theo nhu cầu.'
             : 'Tìm kiếm và lọc thức ăn cho chó mèo theo nhu cầu.' ?>
     </p>
-    <?php if ($isDemoMode): ?>
-        <div class="demo-notice" role="note">
-            <strong>Chế độ xem thử:</strong>
-            Tên sản phẩm, mô tả, giá và hình minh họa đều là dữ liệu mẫu, không phải hàng hóa thật.
-        </div>
-    <?php endif; ?>
 </section>
 
 <section class="catalog-layout" aria-label="Danh mục sản phẩm">
