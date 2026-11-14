@@ -1,5 +1,5 @@
 <section class="auth-panel">
-    <p class="eyebrow">Pet House / Tài khoản</p>
+    <p class="eyebrow">TPet / Tài khoản</p>
     <h1>Tạo tài khoản khách hàng</h1>
     <p class="page-description">Đăng ký để chuẩn bị sử dụng các chức năng mua hàng trong những bước tiếp theo.</p>
 

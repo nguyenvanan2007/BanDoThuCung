@@ -19,7 +19,7 @@ final class AuthController extends Controller
         }
 
         $this->render('auth/login', [
-            'title' => 'Đăng nhập | Pet House',
+            'title' => 'Đăng nhập | TPet',
             'errors' => [],
             'email' => '',
         ]);
@@ -30,7 +30,7 @@ final class AuthController extends Controller
         if (!valid_csrf_token($_POST['_csrf_token'] ?? null)) {
             http_response_code(403);
             $this->render('auth/login', [
-                'title' => 'Đăng nhập | Pet House',
+                'title' => 'Đăng nhập | TPet',
                 'errors' => ['Phiên gửi biểu mẫu không hợp lệ. Hãy tải lại trang và thử lại.'],
                 'email' => '',
             ]);
@@ -45,7 +45,7 @@ final class AuthController extends Controller
             || $password === ''
             || strlen($password) > 72) {
             $this->render('auth/login', [
-                'title' => 'Đăng nhập | Pet House',
+                'title' => 'Đăng nhập | TPet',
                 'errors' => ['Email hoặc mật khẩu không chính xác.'],
                 'email' => $email,
             ]);
@@ -56,7 +56,7 @@ final class AuthController extends Controller
 
         if ($user === null) {
             $this->render('auth/login', [
-                'title' => 'Đăng nhập | Pet House',
+                'title' => 'Đăng nhập | TPet',
                 'errors' => ['Email hoặc mật khẩu không chính xác.'],
                 'email' => $email,
             ]);
@@ -76,7 +76,7 @@ final class AuthController extends Controller
         }
 
         $this->render('auth/register', [
-            'title' => 'Tạo tài khoản | Pet House',
+            'title' => 'Tạo tài khoản | TPet',
             'errors' => [],
             'name' => '',
             'email' => '',
@@ -88,7 +88,7 @@ final class AuthController extends Controller
         if (!valid_csrf_token($_POST['_csrf_token'] ?? null)) {
             http_response_code(403);
             $this->render('auth/register', [
-                'title' => 'Tạo tài khoản | Pet House',
+                'title' => 'Tạo tài khoản | TPet',
                 'errors' => ['Phiên gửi biểu mẫu không hợp lệ. Hãy tải lại trang và thử lại.'],
                 'name' => '',
                 'email' => '',
@@ -120,7 +120,7 @@ final class AuthController extends Controller
 
         if ($errors !== []) {
             $this->render('auth/register', [
-                'title' => 'Tạo tài khoản | Pet House',
+                'title' => 'Tạo tài khoản | TPet',
                 'errors' => $errors,
                 'name' => $name,
                 'email' => $email,
@@ -130,7 +130,7 @@ final class AuthController extends Controller
 
         if (!$this->users()->createCustomer($name, $email, $password)) {
             $this->render('auth/register', [
-                'title' => 'Tạo tài khoản | Pet House',
+                'title' => 'Tạo tài khoản | TPet',
                 'errors' => ['Email này đã được đăng ký. Hãy đăng nhập hoặc dùng email khác.'],
                 'name' => $name,
                 'email' => $email,
@@ -160,7 +160,7 @@ final class AuthController extends Controller
         }
 
         $this->render('auth/account', [
-            'title' => 'Tài khoản | Pet House',
+            'title' => 'Tài khoản | TPet',
             'user' => $_SESSION['user'],
         ]);
     }
@@ -170,7 +170,7 @@ final class AuthController extends Controller
         if (!valid_csrf_token($_POST['_csrf_token'] ?? null)) {
             http_response_code(403);
             $this->render('auth/error', [
-                'title' => 'Yêu cầu không hợp lệ | Pet House',
+                'title' => 'Yêu cầu không hợp lệ | TPet',
                 'message' => 'Phiên gửi biểu mẫu không hợp lệ. Hãy tải lại trang và thử lại.',
             ]);
             return;

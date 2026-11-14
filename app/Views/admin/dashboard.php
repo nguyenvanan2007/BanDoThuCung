@@ -1,5 +1,5 @@
 <section class="page-heading">
-    <p class="eyebrow">Pet House / Quản trị</p>
+    <p class="eyebrow">TPet / Quản trị</p>
     <h1>Khu quản trị</h1>
     <p class="page-description">Quản lý sản phẩm thức ăn cho chó mèo và theo dõi đơn đặt hàng.</p>
 </section>

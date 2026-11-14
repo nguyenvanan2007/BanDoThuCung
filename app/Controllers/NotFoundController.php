@@ -12,7 +12,7 @@ final class NotFoundController extends Controller
     {
         http_response_code(404);
         $this->render('not-found', [
-            'title' => 'Không tìm thấy trang | Pet House',
+            'title' => 'Không tìm thấy trang | TPet',
         ]);
     }
 }

@@ -1,5 +1,5 @@
 <section class="page-heading">
-    <p class="eyebrow">Pet House / Giỏ hàng</p>
+    <p class="eyebrow">TPet / Giỏ hàng</p>
     <h1>Giỏ hàng của bạn</h1>
     <p class="page-description">Có thể thêm sản phẩm trước khi đăng nhập. Giỏ hàng được lưu trong phiên trình duyệt này.</p>
     <?php if ($hasDemoItems || $catalogDemoMode): ?>

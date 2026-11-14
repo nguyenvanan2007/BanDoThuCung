@@ -25,7 +25,7 @@ final class ProductController extends Controller
         $products = $this->catalog->search($filters);
 
         $this->render('products/index', [
-            'title' => 'Thức ăn cho chó và mèo | Pet House',
+            'title' => 'Thức ăn cho chó và mèo | TPet',
             'filters' => $filters,
             'products' => $products,
             'productCount' => count($products),
@@ -43,7 +43,7 @@ final class ProductController extends Controller
         }
 
         $this->render('products/show', [
-            'title' => $product['name'] . ' | Pet House',
+            'title' => $product['name'] . ' | TPet',
             'product' => $product,
             'isDemoMode' => $this->catalog->isDemoMode(),
         ]);

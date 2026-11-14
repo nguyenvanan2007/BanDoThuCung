@@ -12,7 +12,7 @@ final class ServiceUnavailableController extends Controller
     {
         http_response_code(503);
         $this->render('service-unavailable', [
-            'title' => 'Dịch vụ tạm thời không khả dụng | Pet House',
+            'title' => 'Dịch vụ tạm thời không khả dụng | TPet',
         ]);
     }
 }

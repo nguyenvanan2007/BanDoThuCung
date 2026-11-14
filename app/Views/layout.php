@@ -3,15 +3,17 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Pet House - cửa hàng thức ăn dành cho chó và mèo.">
-    <title><?= e($title ?? 'Pet House') ?></title>
+    <meta name="description" content="TPet - cửa hàng thức ăn dành cho chó và mèo.">
+    <title><?= e($title ?? 'TPet') ?></title>
     <link rel="stylesheet" href="/assets/css/app.css">
 </head>
 <body>
     <header class="site-header">
-        <a class="brand" href="/" aria-label="Pet House - Trang chủ">
-            <span class="brand-mark" aria-hidden="true">P</span>
-            <span>Pet House</span>
+        <a class="brand" href="/" aria-label="TPet - Trang chủ">
+            <span class="brand-mark" aria-hidden="true">
+                <img src="/assets/images/tpet-logo.png" alt="">
+            </span>
+            <span>TPet</span>
         </a>
         <nav class="site-nav" aria-label="Điều hướng chính">
             <a href="/">Trang chủ</a>
@@ -33,7 +35,7 @@
                 <a href="/register">Đăng ký</a>
             <?php endif; ?>
         </nav>
-        <p class="site-tagline">Thức ăn cho chó và mèo</p>
+        <p class="site-tagline">Dinh dưỡng cho thú cưng</p>
     </header>
     <main>
         <?php $flash = take_flash(); ?>
@@ -45,7 +47,7 @@
         <?= $content ?>
     </main>
     <footer class="site-footer">
-        <p>Pet House <span aria-hidden="true">&middot;</span> Cửa hàng thức ăn cho thú cưng</p>
+        <p>TPet <span aria-hidden="true">&middot;</span> Cửa hàng thức ăn cho thú cưng</p>
     </footer>
 </body>
 </html>

@@ -1,5 +1,5 @@
 <section class="page-heading">
-    <p class="eyebrow">Pet House / Thanh toán</p>
+    <p class="eyebrow">TPet / Thanh toán</p>
     <h1>Thông tin giao hàng</h1>
     <p class="page-description">Phương thức thanh toán: tiền mặt khi nhận hàng (COD).</p>
     <?php if ($isDemoMode): ?>

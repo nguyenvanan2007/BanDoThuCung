@@ -20,7 +20,7 @@ final class OrderController extends Controller
             ->findAllForCustomer((string) $_SESSION['user']['id']);
 
         $this->render('orders/index', [
-            'title' => 'Đơn hàng của tôi | Pet House',
+            'title' => 'Đơn hàng của tôi | TPet',
             'orders' => $orders,
         ]);
     }
@@ -40,7 +40,7 @@ final class OrderController extends Controller
         }
 
         $this->render('orders/show', [
-            'title' => 'Chi tiết đơn hàng ' . $order['order_number'] . ' | Pet House',
+            'title' => 'Chi tiết đơn hàng ' . $order['order_number'] . ' | TPet',
             'order' => $order,
         ]);
     }

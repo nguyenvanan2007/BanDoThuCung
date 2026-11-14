@@ -1,5 +1,5 @@
 <section class="auth-panel">
-    <p class="eyebrow">Pet House / Tài khoản</p>
+    <p class="eyebrow">TPet / Tài khoản</p>
     <h1>Đăng nhập</h1>
     <p class="page-description">Đăng nhập để mua thức ăn cho chó mèo, theo dõi đơn hàng hoặc quản trị cửa hàng.</p>
 

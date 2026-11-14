@@ -26,6 +26,8 @@ body {
 }
 
 .site-header {
+    flex-wrap: wrap;
+    gap: 1rem;
     border-bottom: 1px solid #e8e8df;
 }
 
@@ -102,13 +104,23 @@ body {
 }
 
 .brand-mark {
-    display: grid;
-    width: 2rem;
-    height: 2rem;
-    place-items: center;
+    position: relative;
+    display: block;
+    width: 3.25rem;
+    height: 3.25rem;
+    overflow: hidden;
+    flex: 0 0 3.25rem;
     border-radius: 50%;
-    color: #fff;
-    background: #417b60;
+    background: #fff;
+    box-shadow: 0 2px 8px rgb(35 51 45 / 12%);
+}
+
+.brand-mark img {
+    position: absolute;
+    top: -0.5rem;
+    left: -2.65rem;
+    width: 8.55rem;
+    max-width: none;
 }
 
 .site-tagline,
@@ -151,6 +163,20 @@ h1 {
 
 .button:hover {
     background: #315f49;
+}
+
+.home-banner {
+    max-width: 1440px;
+    margin: 1.5rem auto 0;
+    padding: 0 2rem;
+}
+
+.home-banner img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 1.5rem;
+    box-shadow: 0 12px 32px rgb(70 74 55 / 10%);
 }
 
 .page-heading,
@@ -756,6 +782,15 @@ h1 {
     .site-header {
         flex-wrap: wrap;
         gap: 0.5rem;
+    }
+
+    .home-banner {
+        margin-top: 1rem;
+        padding: 0 1.25rem;
+    }
+
+    .home-banner img {
+        border-radius: 1rem;
     }
 
     .site-tagline {

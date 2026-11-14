@@ -1,5 +1,5 @@
 <section class="page-heading">
-    <p class="eyebrow">Pet House / Tài khoản</p>
+    <p class="eyebrow">TPet / Tài khoản</p>
     <h1>Đơn hàng của tôi</h1>
     <p class="page-description">Danh sách đơn hàng thuộc tài khoản của bạn.</p>
 </section>

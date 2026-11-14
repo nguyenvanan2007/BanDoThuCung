@@ -25,7 +25,7 @@ final class AdminController extends Controller
         $orders = new AdminOrderManager($connection);
 
         $this->render('admin/dashboard', [
-            'title' => 'Quản trị | Pet House',
+            'title' => 'Quản trị | TPet',
             'activeProductCount' => $products->countActive(),
             'orderStats' => $orders->dashboardStats(),
         ]);
@@ -38,7 +38,7 @@ final class AdminController extends Controller
         }
 
         $this->render('admin/products', [
-            'title' => 'Quản lý sản phẩm | Pet House',
+            'title' => 'Quản lý sản phẩm | TPet',
             'products' => (new AdminProductManager(Database::connection()))->findAll(),
         ]);
     }
@@ -151,7 +151,7 @@ final class AdminController extends Controller
         }
 
         $this->render('admin/orders', [
-            'title' => 'Quản lý đơn hàng | Pet House',
+            'title' => 'Quản lý đơn hàng | TPet',
             'orders' => (new AdminOrderManager(Database::connection()))->findAll(),
         ]);
     }
@@ -170,7 +170,7 @@ final class AdminController extends Controller
         }
 
         $this->render('admin/order-show', [
-            'title' => 'Đơn ' . $order['order_number'] . ' | Quản trị Pet House',
+            'title' => 'Đơn ' . $order['order_number'] . ' | Quản trị TPet',
             'order' => $order,
             'nextStatuses' => $manager->allowedTransitions((string) $order['status']),
         ]);
@@ -213,7 +213,7 @@ final class AdminController extends Controller
             || !(new User(Database::connection()))->isActiveAdministrator($user['id'])) {
             http_response_code(403);
             $this->render('admin/forbidden', [
-                'title' => 'Không có quyền truy cập | Pet House',
+                'title' => 'Không có quyền truy cập | TPet',
             ]);
             return false;
         }
@@ -277,7 +277,7 @@ final class AdminController extends Controller
     private function renderProductForm(array $product, array $errors, bool $isEditing): void
     {
         $this->render('admin/product-form', [
-            'title' => ($isEditing ? 'Sửa sản phẩm' : 'Thêm sản phẩm') . ' | Quản trị Pet House',
+            'title' => ($isEditing ? 'Sửa sản phẩm' : 'Thêm sản phẩm') . ' | Quản trị TPet',
             'product' => $product,
             'errors' => $errors,
             'isEditing' => $isEditing,
@@ -371,7 +371,7 @@ final class AdminController extends Controller
     {
         http_response_code(403);
         $this->render('admin/forbidden', [
-            'title' => 'Yêu cầu không hợp lệ | Pet House',
+            'title' => 'Yêu cầu không hợp lệ | TPet',
         ]);
     }
 

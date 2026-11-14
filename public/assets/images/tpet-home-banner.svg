@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 440" role="img" aria-labelledby="title description">
+  <title id="title">TPet - Bữa ngon mỗi ngày</title>
+  <desc id="description">Banner cửa hàng thức ăn cho chó mèo với hình minh họa chó và mèo vui vẻ.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eff8f8"/>
+      <stop offset="1" stop-color="#fff0d9"/>
+    </linearGradient>
+    <linearGradient id="dog" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f6bd68"/>
+      <stop offset="1" stop-color="#e9944c"/>
+    </linearGradient>
+    <linearGradient id="cat" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff0d8"/>
+      <stop offset="1" stop-color="#f5d4a9"/>
+    </linearGradient>
+  </defs>
+  <rect width="1440" height="440" rx="32" fill="url(#background)"/>
+  <circle cx="1250" cy="210" r="205" fill="#ffffff" opacity=".54"/>
+  <circle cx="1080" cy="360" r="120" fill="#f3d9b8" opacity=".34"/>
+  <g fill="#e7a85d" opacity=".46">
+    <circle cx="890" cy="90" r="10"/><circle cx="915" cy="72" r="8"/><circle cx="940" cy="90" r="10"/><ellipse cx="915" cy="108" rx="15" ry="12"/>
+    <circle cx="1345" cy="340" r="8"/><circle cx="1365" cy="325" r="7"/><circle cx="1385" cy="340" r="8"/><ellipse cx="1365" cy="356" rx="12" ry="10"/>
+  </g>
+  <text x="92" y="100" fill="#39718a" font-family="Segoe UI, Arial, sans-serif" font-size="19" font-weight="700" letter-spacing="3">TPET  ·  DINH DƯỠNG THÚ CƯNG</text>
+  <text x="92" y="184" fill="#263e4a" font-family="Segoe UI, Arial, sans-serif" font-size="52" font-weight="750">Bữa ngon mỗi ngày,</text>
+  <text x="92" y="248" fill="#e28c42" font-family="Segoe UI, Arial, sans-serif" font-size="52" font-weight="750">bé vui khỏe dài lâu!</text>
+  <text x="94" y="296" fill="#526b72" font-family="Segoe UI, Arial, sans-serif" font-size="22">Chọn thức ăn yêu thích cho người bạn bốn chân.</text>
+  <g transform="translate(1030 125)">
+    <ellipse cx="95" cy="200" rx="112" ry="116" fill="#f1b969"/>
+    <path d="M22 133C-8 84 1 43 34 46c24 2 38 34 43 71z" fill="#b76d42"/>
+    <path d="M168 133c30-49 21-90-12-87-24 2-38 34-43 71z" fill="#b76d42"/>
+    <ellipse cx="95" cy="161" rx="76" ry="78" fill="url(#dog)"/>
+    <ellipse cx="68" cy="154" rx="7" ry="10" fill="#45352d"/>
+    <ellipse cx="122" cy="154" rx="7" ry="10" fill="#45352d"/>
+    <ellipse cx="95" cy="183" rx="34" ry="26" fill="#ffe5c4"/>
+    <ellipse cx="95" cy="174" rx="12" ry="9" fill="#45352d"/>
+    <path d="M83 194q12 13 24 0" fill="none" stroke="#754638" stroke-width="5" stroke-linecap="round"/>
+    <path d="M87 201q8 17 16 0" fill="#e87566"/>
+    <path d="M36 267q-5 41 16 39l34-14 17 3 19 14q24 14 29-20l-7-28" fill="#f3c27b"/>
+    <circle cx="71" cy="303" r="13" fill="#fff1df"/><circle cx="112" cy="303" r="13" fill="#fff1df"/>
+  </g>
+  <g transform="translate(1195 112)">
+    <path d="M21 113 31 26l63 44 66-44 10 87" fill="#d89557"/>
+    <path d="m43 74-5-27 31 21M145 68l31-21-5 27" fill="#f3b4a0"/>
+    <ellipse cx="96" cy="166" rx="84" ry="91" fill="url(#cat)"/>
+    <path d="M98 77q-44 8-47 57 31-23 51 3 16-39 49-37-14-26-53-23" fill="#e8a05c"/>
+    <ellipse cx="68" cy="158" rx="7" ry="10" fill="#45352d"/>
+    <ellipse cx="124" cy="158" rx="7" ry="10" fill="#45352d"/>
+    <path d="M88 180q8-8 16 0-8 11-16 0" fill="#d98678"/>
+    <path d="M95 188q-9 13-21 7m21-7q9 13 21 7" fill="none" stroke="#795047" stroke-width="4" stroke-linecap="round"/>
+    <path d="M32 179 2 173m32 18-31 6m153-18 30-6m-31 18 31 6" fill="none" stroke="#a77c5e" stroke-width="3" stroke-linecap="round"/>
+    <path d="M55 244q41 24 82 0l17 48q-49 25-113 0z" fill="#f7dfbf"/>
+  </g>
+  <g fill="#ffffff" opacity=".85">
+    <circle cx="1003" cy="315" r="8"/><circle cx="1023" cy="301" r="7"/><circle cx="1043" cy="315" r="8"/><ellipse cx="1023" cy="331" rx="12" ry="9"/>
+    <circle cx="1330" cy="104" r="7"/><circle cx="1348" cy="92" r="6"/><circle cx="1366" cy="104" r="7"/><ellipse cx="1348" cy="118" rx="10" ry="8"/>
+  </g>
+</svg>

@@ -44,7 +44,7 @@ final class CartController extends Controller
         }
 
         $this->render('cart/index', [
-            'title' => 'Giỏ hàng | Pet House',
+            'title' => 'Giỏ hàng | TPet',
             'items' => $items,
             'total' => $total,
             'hasDemoItems' => $hasDemoItems,
@@ -188,7 +188,7 @@ final class CartController extends Controller
     {
         http_response_code(403);
         $this->render('cart/error', [
-            'title' => 'Yêu cầu không hợp lệ | Pet House',
+            'title' => 'Yêu cầu không hợp lệ | TPet',
             'message' => 'Phiên gửi biểu mẫu không hợp lệ. Hãy tải lại trang và thử lại.',
         ]);
     }

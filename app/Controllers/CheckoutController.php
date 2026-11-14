@@ -33,7 +33,7 @@ final class CheckoutController extends Controller
         }
 
         $this->render('checkout/index', [
-            'title' => 'Thanh toán COD | Pet House',
+            'title' => 'Thanh toán COD | TPet',
             'items' => $checkout['items'],
             'subtotal' => $checkout['subtotal'],
             'shippingFee' => $this->shippingFee(),
@@ -54,7 +54,7 @@ final class CheckoutController extends Controller
         if (!valid_csrf_token($_POST['_csrf_token'] ?? null)) {
             http_response_code(403);
             $this->render('checkout/error', [
-                'title' => 'Yêu cầu không hợp lệ | Pet House',
+                'title' => 'Yêu cầu không hợp lệ | TPet',
                 'message' => 'Phiên gửi biểu mẫu không hợp lệ. Hãy tải lại trang và thử lại.',
             ]);
             return;
@@ -73,7 +73,7 @@ final class CheckoutController extends Controller
 
         if ($errors !== []) {
             $this->render('checkout/index', [
-                'title' => 'Thanh toán COD | Pet House',
+                'title' => 'Thanh toán COD | TPet',
                 'items' => $checkout['items'],
                 'subtotal' => $checkout['subtotal'],
                 'shippingFee' => $this->shippingFee(),
@@ -99,7 +99,7 @@ final class CheckoutController extends Controller
             $checkout = $this->checkoutItems();
             $checkout['errors'][] = $exception->getMessage();
             $this->render('checkout/index', [
-                'title' => 'Thanh toán COD | Pet House',
+                'title' => 'Thanh toán COD | TPet',
                 'items' => $checkout['items'],
                 'subtotal' => $checkout['subtotal'],
                 'shippingFee' => $this->shippingFee(),

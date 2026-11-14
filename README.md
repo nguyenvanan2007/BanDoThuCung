@@ -1,4 +1,4 @@
-# Pet House — cửa hàng thức ăn cho chó và mèo
+# TPet — cửa hàng thức ăn cho chó và mèo
 
 Khung ứng dụng PHP 8.1+, OOP/MVC, Composer PSR-4, PDO và MySQL. Website tập trung bán thức ăn cho chó và mèo.
 
