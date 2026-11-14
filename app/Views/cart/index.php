@@ -14,7 +14,7 @@
         <div class="empty-state">
             <h2>Giỏ hàng đang trống</h2>
             <p>Chọn thức ăn cho chó hoặc mèo để thêm vào giỏ.</p>
-            <a class="button" href="/products">Xem sản phẩm</a>
+            <a class="button" href="/">Xem sản phẩm</a>
         </div>
     <?php else: ?>
         <div class="cart-items">
@@ -85,7 +85,7 @@
             <?php else: ?>
                 <button class="button checkout-button" type="button" disabled>Đặt hàng không khả dụng với dữ liệu mẫu</button>
             <?php endif; ?>
-            <a class="reset-link" href="/products">Tiếp tục xem sản phẩm</a>
+            <a class="reset-link" href="/">Tiếp tục xem sản phẩm</a>
         </aside>
     <?php endif; ?>
 </section>

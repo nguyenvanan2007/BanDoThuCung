@@ -65,7 +65,7 @@ final class CartController extends Controller
 
         if ($product === null) {
             $this->flashError('Sản phẩm không tồn tại hoặc đã ngừng bán.');
-            $this->redirect('/products');
+            $this->redirect('/');
         }
 
         $currentCart = $this->cartItems();

@@ -42,7 +42,7 @@ asm2/
 ## Các class/controller được xác định trong tài liệu
 - Core: `Database`, `Controller`.
 - Model: `Product`, `Category`, `User`, `Order`.
-- Frontend controller: `HomeController`, `ProductController`, `CartController`, `AuthController`, `OrderController`.
+- Frontend controller: `ProductController` (danh mục sản phẩm tại trang chủ), `CartController`, `AuthController`, `OrderController`.
 - Backend controller: `AdminDashboardController`, `AdminProductController`, `AdminCategoryController`, `AdminOrderController`.
 
 Tên file cụ thể bên trong một số thư mục chưa được nêu đầy đủ; cần giữ quy ước đặt tên thống nhất khi triển khai.

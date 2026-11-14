@@ -1,5 +1,5 @@
 <section class="page-heading">
-    <p class="eyebrow"><a href="/products">Sản phẩm</a> / Chi tiết sản phẩm</p>
+    <p class="eyebrow"><a href="/">Trang chủ</a> / Chi tiết sản phẩm</p>
     <?php if ($product['isDemo']): ?>
         <div class="demo-notice" role="note">
             Sản phẩm, thông tin và giá trên trang này chỉ là dữ liệu minh họa, không dùng để đặt hàng.
@@ -43,6 +43,6 @@
         <?php else: ?>
             <p class="stock-warning">Sản phẩm hiện đã hết hàng.</p>
         <?php endif; ?>
-        <a class="button" href="/products">Quay lại danh sách sản phẩm</a>
+        <a class="button" href="/">Quay lại danh sách sản phẩm</a>
     </div>
 </article>

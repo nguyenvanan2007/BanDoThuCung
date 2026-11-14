@@ -9,7 +9,7 @@
         <div class="empty-state">
             <h2>Bạn chưa có đơn hàng</h2>
             <p>Các đơn hàng sau khi đặt sẽ xuất hiện ở đây.</p>
-            <a class="button" href="/products">Xem sản phẩm</a>
+            <a class="button" href="/">Xem sản phẩm</a>
         </div>
     <?php else: ?>
         <div class="orders-table-wrap">

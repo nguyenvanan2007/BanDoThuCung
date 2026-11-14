@@ -4,7 +4,7 @@ Khung ứng dụng PHP 8.1+, OOP/MVC, Composer PSR-4, PDO và MySQL. Website t�
 
 ## Trạng thái hiện tại
 
-Khung MVC, trang chủ, catalog sản phẩm (demo/MySQL), đăng ký/đăng nhập khách hàng, đăng xuất có CSRF, trang tài khoản, giỏ hàng session, đặt đơn COD và lịch sử đơn hàng đã có. Quản trị chưa được triển khai.
+Khung MVC, trang chủ hiển thị danh sách và bộ lọc sản phẩm (demo/MySQL), đăng ký/đăng nhập khách hàng, đăng xuất có CSRF, trang tài khoản, giỏ hàng session, đặt đơn COD và lịch sử đơn hàng đã có. Đường dẫn `/products` chuyển về trang chủ; chi tiết sản phẩm vẫn dùng `/products/{id}`. Quản trị chưa được triển khai.
 
 ## Chạy cục bộ
 

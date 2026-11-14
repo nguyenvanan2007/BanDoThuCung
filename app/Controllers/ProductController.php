@@ -25,7 +25,7 @@ final class ProductController extends Controller
         $products = $this->catalog->search($filters);
 
         $this->render('products/index', [
-            'title' => 'Sản phẩm thức ăn cho chó mèo | Pet House',
+            'title' => 'Thức ăn cho chó và mèo | Pet House',
             'filters' => $filters,
             'products' => $products,
             'productCount' => count($products),

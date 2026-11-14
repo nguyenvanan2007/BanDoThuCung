@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Controllers\HomeController;
 use App\Controllers\NotFoundController;
 use App\Controllers\ProductController;
 use App\Controllers\AuthController;
@@ -147,12 +146,13 @@ try {
     }
 
     if ($route === '/') {
-        (new HomeController())->index();
+        (new ProductController(ProductCatalogFactory::create()))->index();
         exit;
     }
 
     if ($route === '/products') {
-        (new ProductController(ProductCatalogFactory::create()))->index();
+        $query = http_build_query($_GET);
+        header('Location: /' . ($query === '' ? '' : '?' . $query), true, 302);
         exit;
     }
 

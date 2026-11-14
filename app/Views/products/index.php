@@ -1,5 +1,5 @@
 <section class="page-heading">
-    <p class="eyebrow">Pet House / Sản phẩm</p>
+    <p class="eyebrow">Pet House / Cửa hàng</p>
     <h1>Thức ăn cho chó và mèo</h1>
     <p class="page-description">
         <?= $isDemoMode
@@ -15,7 +15,7 @@
 </section>
 
 <section class="catalog-layout" aria-label="Danh mục sản phẩm">
-    <form class="filter-panel" method="get" action="/products">
+    <form class="filter-panel" method="get" action="/">
         <h2>Lọc sản phẩm</h2>
         <label for="search">Tìm theo tên hoặc mã sản phẩm</label>
         <input id="search" name="q" type="search" value="<?= e($filters['q']) ?>" placeholder="Ví dụ: thức ăn khô">
@@ -50,7 +50,7 @@
         </select>
 
         <button class="button filter-button" type="submit">Áp dụng bộ lọc</button>
-        <a class="reset-link" href="/products">Xóa bộ lọc</a>
+        <a class="reset-link" href="/">Xóa bộ lọc</a>
     </form>
 
     <div class="catalog-results">
@@ -61,7 +61,7 @@
             <div class="empty-state">
                 <h2>Không tìm thấy sản phẩm phù hợp</h2>
                 <p>Thử đổi từ khóa hoặc xóa bớt bộ lọc.</p>
-                <a class="button" href="/products">
+                <a class="button" href="/">
                     <?= $isDemoMode ? 'Xem tất cả sản phẩm mẫu' : 'Xem tất cả sản phẩm' ?>
                 </a>
             </div>

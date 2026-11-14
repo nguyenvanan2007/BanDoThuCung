@@ -15,7 +15,6 @@
         </a>
         <nav class="site-nav" aria-label="Điều hướng chính">
             <a href="/">Trang chủ</a>
-            <a href="/products">Sản phẩm</a>
             <a href="/cart">Giỏ hàng</a>
             <?php if (isset($_SESSION['user']) && is_array($_SESSION['user'])): ?>
                 <a href="/account">Tài khoản</a>

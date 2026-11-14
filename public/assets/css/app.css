@@ -117,17 +117,6 @@ body {
     font-size: 0.9rem;
 }
 
-.hero {
-    display: grid;
-    grid-template-columns: minmax(0, 1.2fr) minmax(220px, 0.8fr);
-    align-items: center;
-    gap: 3rem;
-    max-width: 1200px;
-    min-height: 480px;
-    margin: 0 auto;
-    padding: 5rem 2rem;
-}
-
 .eyebrow {
     color: #417b60;
     font-size: 0.8rem;
@@ -149,14 +138,6 @@ h1 {
     line-height: 1.08;
 }
 
-.hero-description,
-.catalog-placeholder > p:last-child {
-    max-width: 560px;
-    color: #68766f;
-    font-size: 1.1rem;
-    line-height: 1.7;
-}
-
 .button {
     display: inline-block;
     margin-top: 0.75rem;
@@ -170,32 +151,6 @@ h1 {
 
 .button:hover {
     background: #315f49;
-}
-
-.hero-art {
-    display: grid;
-    min-height: 280px;
-    place-items: center;
-    border-radius: 48% 52% 43% 57%;
-    background: #edf1e4;
-}
-
-.pet-icon {
-    font-size: clamp(5rem, 12vw, 9rem);
-}
-
-.catalog-placeholder {
-    max-width: 1200px;
-    margin: 0 auto 4rem;
-    padding: 2rem;
-    border: 1px solid #e8e8df;
-    border-radius: 1rem;
-    background: #fff;
-}
-
-.catalog-placeholder h2 {
-    margin-bottom: 0.6rem;
-    font-size: clamp(1.5rem, 3vw, 2rem);
 }
 
 .page-heading,
@@ -768,17 +723,6 @@ h1 {
         flex-wrap: wrap;
         gap: 0.75rem;
         margin-left: auto;
-    }
-
-    .hero {
-        grid-template-columns: 1fr;
-        gap: 2rem;
-        padding-top: 3.5rem;
-        padding-bottom: 3.5rem;
-    }
-
-    .hero-art {
-        min-height: 200px;
     }
 
     .catalog-layout,
