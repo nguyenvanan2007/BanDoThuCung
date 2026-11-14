@@ -32,7 +32,7 @@ Mặc định `CATALOG_SOURCE=demo` để xem catalog mà không cần database.
 ```sql
 UPDATE users
 SET role = 'admin'
-WHERE email = 'your-email@example.com' AND is_active = 1;
+WHERE email = 'an123@gmail.com' AND is_active = 1;
 ```
 
 Không có tài khoản hoặc mật khẩu admin mặc định. Đăng nhập bằng tài khoản vừa được cấp quyền sẽ chuyển tới `/admin`. Quản trị viên có thể thêm/sửa sản phẩm thật, chọn ảnh đã chép vào `public/assets/images/products/`, xem đơn và chuyển trạng thái theo luồng. Hủy đơn khi còn chờ xác nhận/đã xác nhận sẽ hoàn tồn kho trong cùng transaction; sản phẩm DEMO không xuất hiện trong quản trị.
