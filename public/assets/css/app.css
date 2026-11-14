@@ -129,6 +129,11 @@ body {
     font-size: 0.9rem;
 }
 
+.site-account-name {
+    color: #23332c;
+    font-weight: 650;
+}
+
 .eyebrow {
     color: #417b60;
     font-size: 0.8rem;

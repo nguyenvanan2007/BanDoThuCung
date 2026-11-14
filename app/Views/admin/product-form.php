@@ -23,8 +23,8 @@ $selectedImage = is_string($product['imagePath'] ?? null) ? $product['imagePath'
     <form class="admin-product-form" method="post" action="<?= e($formAction) ?>">
         <input type="hidden" name="_csrf_token" value="<?= e(csrf_token()) ?>">
 
-        <label for="sku">Mã SKU</label>
-        <input id="sku" name="sku" type="text" maxlength="64" pattern="[A-Za-z0-9_-]+" value="<?= e($product['sku']) ?>" required>
+        <label for="sku">Mã sản phẩm</label>
+        <input id="sku" name="sku" type="text" maxlength="64" pattern="[A-Za-z0-9_\-]+" value="<?= e($product['sku']) ?>" required>
 
         <label for="name">Tên sản phẩm</label>
         <input id="name" name="name" type="text" maxlength="180" value="<?= e($product['name']) ?>" required>

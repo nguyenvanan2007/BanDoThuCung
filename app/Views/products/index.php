@@ -14,6 +14,12 @@
             ? 'Tìm kiếm và lọc các sản phẩm minh họa theo nhu cầu.'
             : 'Tìm kiếm và lọc thức ăn cho chó mèo theo nhu cầu.' ?>
     </p>
+    <?php if ($isDemoMode): ?>
+        <div class="demo-notice" role="note">
+            <strong>Lưu ý:</strong>
+            Tên sản phẩm, mô tả, giá và hình minh họa đều là dữ liệu mẫu, không phải hàng hóa thật.
+        </div>
+    <?php endif; ?>
 </section>
 
 <section class="catalog-layout" aria-label="Danh mục sản phẩm">

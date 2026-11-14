@@ -8,6 +8,12 @@
     <link rel="stylesheet" href="/assets/css/app.css">
 </head>
 <body>
+    <?php
+    $headerUser = $_SESSION['user'] ?? null;
+    $headerAccountName = is_array($headerUser) && is_string($headerUser['name'] ?? null)
+        ? trim($headerUser['name'])
+        : '';
+    ?>
     <header class="site-header">
         <a class="brand" href="/" aria-label="TPet - Trang chủ">
             <span class="brand-mark" aria-hidden="true">
@@ -35,7 +41,11 @@
                 <a href="/register">Đăng ký</a>
             <?php endif; ?>
         </nav>
-        <p class="site-tagline">Dinh dưỡng cho thú cưng</p>
+        <?php if ($headerAccountName !== ''): ?>
+            <p class="site-tagline site-account-name">Xin chào, <?= e($headerAccountName) ?></p>
+        <?php else: ?>
+            <p class="site-tagline">Thức ăn cho chó và mèo</p>
+        <?php endif; ?>
     </header>
     <main>
         <?php $flash = take_flash(); ?>
@@ -44,7 +54,7 @@
                 <?= e($flash['message'] ?? '') ?>
             </div>
         <?php endif; ?>
-        <?= $content ?>
+        <?= $content ?? '' ?>
     </main>
     <footer class="site-footer">
         <p>TPet <span aria-hidden="true">&middot;</span> Cửa hàng thức ăn cho thú cưng</p>

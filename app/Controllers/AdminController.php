@@ -77,7 +77,7 @@ final class AdminController extends Controller
 
             $this->renderProductForm(
                 $this->productFormData($data),
-                ['Mã SKU đã được sử dụng cho sản phẩm khác.'],
+                ['Mã sản phẩm đã được sử dụng cho sản phẩm khác.'],
                 false
             );
             return;
@@ -134,7 +134,7 @@ final class AdminController extends Controller
 
             $this->renderProductForm(
                 $this->productFormData($data, $productId),
-                ['Mã SKU đã được sử dụng cho sản phẩm khác.'],
+                ['Mã sản phẩm đã được sử dụng cho sản phẩm khác.'],
                 true
             );
             return;
@@ -236,7 +236,7 @@ final class AdminController extends Controller
         $errors = [];
 
         if (preg_match('/\A[A-Za-z0-9_-]{1,64}\z/', $sku) !== 1) {
-            $errors[] = 'Mã SKU chỉ được gồm chữ, số, dấu gạch ngang hoặc gạch dưới (tối đa 64 ký tự).';
+            $errors[] = 'Mã sản phẩm chỉ được gồm chữ, số, dấu gạch ngang hoặc gạch dưới (tối đa 64 ký tự).';
         }
         if (mb_strlen($name) < 2 || mb_strlen($name) > 180) {
             $errors[] = 'Tên sản phẩm cần có từ 2 đến 180 ký tự.';

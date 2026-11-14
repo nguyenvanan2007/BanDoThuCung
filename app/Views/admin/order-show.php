@@ -12,7 +12,7 @@
                 <thead>
                     <tr>
                         <th>Sản phẩm</th>
-                        <th>Mã SKU</th>
+                        <th>Mã sản phẩm</th>
                         <th>Số lượng</th>
                         <th>Đơn giá</th>
                         <th>Tạm tính</th>
