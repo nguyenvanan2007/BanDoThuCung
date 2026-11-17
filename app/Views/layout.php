@@ -23,7 +23,9 @@
         </a>
         <nav class="site-nav" aria-label="Điều hướng chính">
             <a href="/">Trang chủ</a>
-            <a href="/cart">Giỏ hàng</a>
+            <?php if (!is_array($headerUser) || ($headerUser['role'] ?? '') !== 'admin'): ?>
+                <a href="/cart">Giỏ hàng</a>
+            <?php endif; ?>
             <?php if (isset($_SESSION['user']) && is_array($_SESSION['user'])): ?>
                 <?php if (($_SESSION['user']['role'] ?? '') === 'admin'): ?>
                     <a href="/admin">Quản trị</a>
