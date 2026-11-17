@@ -187,8 +187,9 @@ final class AdminController extends Controller
         }
 
         $nextStatus = $this->postText('status');
+        $userId = $_SESSION['user']['id'];
         try {
-            (new AdminOrderManager(Database::connection()))->updateStatus($orderId, $nextStatus);
+            (new AdminOrderManager(Database::connection()))->updateStatus($orderId, $nextStatus, $userId);
         } catch (DomainException $exception) {
             $this->flashError($exception->getMessage());
             $this->redirect('/admin/orders/' . rawurlencode($orderId));

@@ -64,3 +64,5 @@
         </div>
     </aside>
 </section>
+
+<?php require dirname(__DIR__) . '/partials/order-history.php'; ?>

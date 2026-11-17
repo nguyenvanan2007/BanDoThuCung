@@ -127,6 +127,16 @@ final class Order
             ]);
             $orderId = (string) $this->connection->lastInsertId();
 
+            $insertStatusHistory = $this->connection->prepare(
+                'INSERT INTO order_status_history (order_id, status, changed_by_user_id)'
+                . ' VALUES (:order_id, :status, :changed_by_user_id)'
+            );
+            $insertStatusHistory->execute([
+                'order_id' => $orderId,
+                'status' => 'pending',
+                'changed_by_user_id' => $userId,
+            ]);
+
             $decreaseStock = $this->connection->prepare(
                 'UPDATE products SET stock_quantity = stock_quantity - :quantity'
                 . ' WHERE id = :id AND is_active = 1 AND is_demo = 0'
@@ -217,7 +227,22 @@ final class Order
             },
             $items->fetchAll()
         );
+        $order['statusHistory'] = $this->findStatusHistory($orderId);
 
         return $order;
+    }
+
+    private function findStatusHistory(string $orderId): array
+    {
+        $statement = $this->connection->prepare(
+            'SELECT h.status, h.created_at, u.name AS changed_by_name'
+            . ' FROM order_status_history h'
+            . ' LEFT JOIN users u ON u.id = h.changed_by_user_id'
+            . ' WHERE h.order_id = :order_id'
+            . ' ORDER BY h.created_at ASC, h.id ASC'
+        );
+        $statement->execute(['order_id' => $orderId]);
+
+        return $statement->fetchAll();
     }
 }

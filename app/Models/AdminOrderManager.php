@@ -77,6 +77,15 @@ final class AdminOrderManager
             },
             $items->fetchAll()
         );
+        $history = $this->connection->prepare(
+            'SELECT h.status, h.created_at, u.name AS changed_by_name'
+            . ' FROM order_status_history h'
+            . ' LEFT JOIN users u ON u.id = h.changed_by_user_id'
+            . ' WHERE h.order_id = :order_id'
+            . ' ORDER BY h.created_at ASC, h.id ASC'
+        );
+        $history->execute(['order_id' => $id]);
+        $order['statusHistory'] = $history->fetchAll();
 
         return $order;
     }
@@ -86,7 +95,7 @@ final class AdminOrderManager
         return self::STATUS_TRANSITIONS[$status] ?? [];
     }
 
-    public function updateStatus(string $orderId, string $nextStatus): void
+    public function updateStatus(string $orderId, string $nextStatus, string $changedByUserId): void
     {
         if (!in_array($nextStatus, ['pending', 'confirmed', 'shipping', 'completed', 'cancelled'], true)) {
             throw new DomainException('Trạng thái đơn hàng không hợp lệ.');
@@ -143,6 +152,15 @@ final class AdminOrderManager
             $update->execute([
                 'status' => $nextStatus,
                 'id' => $orderId,
+            ]);
+            $history = $this->connection->prepare(
+                'INSERT INTO order_status_history (order_id, status, changed_by_user_id)'
+                . ' VALUES (:order_id, :status, :changed_by_user_id)'
+            );
+            $history->execute([
+                'order_id' => $orderId,
+                'status' => $nextStatus,
+                'changed_by_user_id' => $changedByUserId,
             ]);
             $this->connection->commit();
         } catch (Throwable $exception) {
