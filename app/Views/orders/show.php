@@ -2,7 +2,10 @@
     <p class="eyebrow"><a href="/orders">Đơn hàng của tôi</a> / Chi tiết</p>
     <h1>Đơn <?= e($order['order_number']) ?></h1>
     <p class="page-description">
-        Trạng thái: <strong><?= e(order_status_label((string) $order['status'])) ?></strong>
+        Trạng thái:
+        <span class="order-status order-status-<?= e($order['status']) ?>">
+            <?= e(order_status_label((string) $order['status'])) ?>
+        </span>
         · Thanh toán khi nhận hàng (COD)
     </p>
 </section>

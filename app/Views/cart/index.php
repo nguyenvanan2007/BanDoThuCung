@@ -2,11 +2,6 @@
     <p class="eyebrow">TPet / Giỏ hàng</p>
     <h1>Giỏ hàng của bạn</h1>
     <p class="page-description">Có thể thêm sản phẩm trước khi đăng nhập. Giỏ hàng được lưu trong phiên trình duyệt này.</p>
-    <?php if ($hasDemoItems || $catalogDemoMode): ?>
-        <div class="demo-notice" role="note">
-            Giỏ hàng đang dùng dữ liệu minh họa. Giá và số lượng mẫu không đại diện cho hàng hóa hoặc tồn kho thật.
-        </div>
-    <?php endif; ?>
 </section>
 
 <section class="cart-page">
@@ -82,13 +77,21 @@
         </div>
 
         <aside class="cart-summary">
-            <p>Tạm tính</p>
-            <strong><?= e(format_vnd($total)) ?></strong>
+            <h2>Tóm tắt giỏ hàng</h2>
+            <div class="checkout-line">
+                <span>Số lượng sản phẩm</span>
+                <strong><?= e(array_sum(array_column($items, 'quantity'))) ?></strong>
+            </div>
+            <div class="checkout-total">
+                <span>Tạm tính</span>
+                <strong><?= e(format_vnd($total)) ?></strong>
+            </div>
             <?php if (!$catalogDemoMode && !$hasDemoItems): ?>
                 <a class="button checkout-button" href="/checkout">Tiến hành thanh toán</a>
             <?php else: ?>
                 <button class="button checkout-button" type="button" disabled>Đặt hàng không khả dụng với dữ liệu mẫu</button>
             <?php endif; ?>
+            <p class="cart-summary-note">Phí giao hàng sẽ được hiển thị ở bước thanh toán.</p>
             <a class="reset-link" href="/">Tiếp tục xem sản phẩm</a>
         </aside>
     <?php endif; ?>

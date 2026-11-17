@@ -14,12 +14,31 @@
             ? 'Tìm kiếm và lọc các sản phẩm minh họa theo nhu cầu.'
             : 'Tìm kiếm và lọc thức ăn cho chó mèo theo nhu cầu.' ?>
     </p>
-    <?php if ($isDemoMode): ?>
-        <div class="demo-notice" role="note">
-            <strong>Lưu ý:</strong>
-            Tên sản phẩm, mô tả, giá và hình minh họa đều là dữ liệu mẫu, không phải hàng hóa thật.
-        </div>
-    <?php endif; ?>
+</section>
+
+<section class="shop-categories" aria-labelledby="shop-categories-title">
+    <div class="shop-categories-heading">
+        <h2 id="shop-categories-title">Chọn theo thú cưng</h2>
+        <a href="#catalog">Xem tất cả sản phẩm</a>
+    </div>
+    <div class="shop-category-grid">
+        <a class="shop-category-card" href="/?species=dog#catalog">
+            <span class="shop-category-icon" aria-hidden="true">🐶</span>
+            <span class="shop-category-copy">
+                <strong>Thức ăn cho chó</strong>
+                <small>Khám phá sản phẩm dành cho chó</small>
+            </span>
+            <span class="shop-category-arrow" aria-hidden="true">→</span>
+        </a>
+        <a class="shop-category-card" href="/?species=cat#catalog">
+            <span class="shop-category-icon" aria-hidden="true">🐱</span>
+            <span class="shop-category-copy">
+                <strong>Thức ăn cho mèo</strong>
+                <small>Khám phá sản phẩm dành cho mèo</small>
+            </span>
+            <span class="shop-category-arrow" aria-hidden="true">→</span>
+        </a>
+    </div>
 </section>
 
 <section class="catalog-layout" aria-label="Danh mục sản phẩm">
@@ -76,27 +95,44 @@
         <?php else: ?>
             <div class="product-grid">
                 <?php foreach ($products as $product): ?>
-                    <a class="product-card" href="/products/<?= e($product['id']) ?>">
-                        <div class="product-art">
-                            <?php if ($product['imagePath'] !== null): ?>
-                                <img src="<?= e($product['imagePath']) ?>" alt="<?= e($product['name']) ?>" loading="lazy" decoding="async">
-                            <?php else: ?>
-                                <span aria-hidden="true"><?= e($product['icon']) ?></span>
-                                <small>Chưa có ảnh sản phẩm</small>
-                            <?php endif; ?>
-                        </div>
-                        <div class="product-card-body">
-                            <span class="product-label">
-                                <?= e($product['speciesLabel']) ?> · <?= e($product['categoryLabel']) ?>
-                                <?= $product['isDemo'] ? ' · DEMO' : '' ?>
-                            </span>
-                            <h2><?= e($product['name']) ?></h2>
-                            <div class="product-card-footer">
-                                <strong><?= $product['isDemo'] ? 'Giá mẫu: ' : 'Giá: ' ?><?= e(format_vnd($product['price'])) ?></strong>
-                                <span>Xem chi tiết&nbsp;→</span>
+                    <article class="product-card">
+                        <a class="product-card-link" href="/products/<?= e($product['id']) ?>">
+                            <div class="product-art">
+                                <?php if ($product['imagePath'] !== null): ?>
+                                    <img src="<?= e($product['imagePath']) ?>" alt="<?= e($product['name']) ?>" loading="lazy" decoding="async">
+                                <?php else: ?>
+                                    <span aria-hidden="true"><?= e($product['icon']) ?></span>
+                                    <small>Chưa có ảnh sản phẩm</small>
+                                <?php endif; ?>
                             </div>
-                        </div>
-                    </a>
+                            <div class="product-card-body">
+                                <span class="product-label">
+                                    <?= e($product['speciesLabel']) ?> · <?= e($product['categoryLabel']) ?>
+                                    <?= $product['isDemo'] ? ' · DEMO' : '' ?>
+                                </span>
+                                <?php if (!$product['isDemo']): ?>
+                                    <span class="product-stock-status <?= $product['stockQuantity'] > 0 ? 'in-stock' : 'out-of-stock' ?>">
+                                        <?= $product['stockQuantity'] > 0 ? 'Còn hàng' : 'Hết hàng' ?>
+                                    </span>
+                                <?php endif; ?>
+                                <h2><?= e($product['name']) ?></h2>
+                                <div class="product-card-footer">
+                                    <strong><?= $product['isDemo'] ? 'Giá mẫu: ' : 'Giá: ' ?><?= e(format_vnd($product['price'])) ?></strong>
+                                    <span>Xem chi tiết&nbsp;→</span>
+                                </div>
+                            </div>
+                        </a>
+                        <?php if (!$product['isDemo'] && $product['stockQuantity'] > 0): ?>
+                            <form class="product-buy-form" method="post" action="/cart/add">
+                                <input type="hidden" name="_csrf_token" value="<?= e(csrf_token()) ?>">
+                                <input type="hidden" name="product_id" value="<?= e($product['id']) ?>">
+                                <input type="hidden" name="quantity" value="1">
+                                <button class="button product-buy-button" type="submit">Thêm vào giỏ</button>
+                            </form>
+                        <?php elseif (!$product['isDemo']): ?>
+                            <button class="button product-buy-button" type="button" disabled>Hết hàng</button>
+                        <?php endif; ?>
+                    </article>
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>

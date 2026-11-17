@@ -2,11 +2,6 @@
     <p class="eyebrow">TPet / Thanh toán</p>
     <h1>Thông tin giao hàng</h1>
     <p class="page-description">Phương thức thanh toán: tiền mặt khi nhận hàng (COD).</p>
-    <?php if ($isDemoMode): ?>
-        <div class="demo-notice" role="note">
-            Đây là chế độ xem thử. Sản phẩm và tồn kho minh họa không thể tạo đơn hàng thật.
-        </div>
-    <?php endif; ?>
 </section>
 
 <section class="checkout-layout">

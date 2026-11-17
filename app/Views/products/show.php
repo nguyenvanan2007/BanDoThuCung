@@ -1,10 +1,5 @@
 <section class="page-heading">
     <p class="eyebrow"><a href="/">Trang chủ</a> / Chi tiết sản phẩm</p>
-    <?php if ($product['isDemo']): ?>
-        <div class="demo-notice" role="note">
-            Sản phẩm, thông tin và giá trên trang này chỉ là dữ liệu minh họa, không dùng để đặt hàng.
-        </div>
-    <?php endif; ?>
 </section>
 
 <article class="product-detail">
@@ -18,6 +13,11 @@
     </div>
     <div class="product-detail-copy">
         <span class="product-label"><?= e($product['speciesLabel']) ?> · <?= e($product['categoryLabel']) ?></span>
+        <?php if (!$product['isDemo']): ?>
+            <span class="product-stock-status <?= $product['stockQuantity'] > 0 ? 'in-stock' : 'out-of-stock' ?>">
+                <?= $product['stockQuantity'] > 0 ? 'Còn hàng' : 'Hết hàng' ?>
+            </span>
+        <?php endif; ?>
         <h1><?= e($product['name']) ?></h1>
         <?php if ($product['isDemo']): ?>
             <p class="detail-price">Giá mẫu: <?= e(format_vnd($product['price'])) ?></p>

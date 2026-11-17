@@ -30,7 +30,11 @@
                             <td><?= e($order['order_number']) ?></td>
                             <td><?= e(date('d/m/Y H:i', strtotime((string) $order['created_at']))) ?></td>
                             <td><?= e($order['item_count']) ?></td>
-                            <td><?= e(order_status_label((string) $order['status'])) ?></td>
+                            <td>
+                                <span class="order-status order-status-<?= e($order['status']) ?>">
+                                    <?= e(order_status_label((string) $order['status'])) ?>
+                                </span>
+                            </td>
                             <td><?= e(format_vnd((int) $order['total_vnd'])) ?></td>
                             <td><a href="/orders/<?= e($order['id']) ?>">Chi tiết</a></td>
                         </tr>
