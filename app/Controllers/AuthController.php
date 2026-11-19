@@ -55,6 +55,18 @@ final class AuthController extends Controller
         $user = $this->users()->authenticate($normalizedEmail, $password);
 
         if ($user === null) {
+            if ($this->users()->authenticateSuspended($normalizedEmail, $password)) {
+                $this->render('auth/login', [
+                    'title' => 'Tài khoản bị đình chỉ | TPet',
+                    'errors' => [
+                        'Tài khoản của bạn đã bị đình chỉ vì vi phạm. '
+                        . 'Vui lòng liên hệ <a href="mailto:abc@gmail.com">abc@gmail.com</a> để kháng cáo.',
+                    ],
+                    'email' => $email,
+                ]);
+                return;
+            }
+
             $this->render('auth/login', [
                 'title' => 'Đăng nhập | TPet',
                 'errors' => ['Email hoặc mật khẩu không chính xác.'],

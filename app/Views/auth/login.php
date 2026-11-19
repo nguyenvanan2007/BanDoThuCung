@@ -6,7 +6,7 @@
     <?php if ($errors !== []): ?>
         <div class="form-errors" role="alert">
             <?php foreach ($errors as $error): ?>
-                <p><?= e($error) ?></p>
+                <p><?= $error ?></p>
             <?php endforeach; ?>
         </div>
     <?php endif; ?>

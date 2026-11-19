@@ -29,6 +29,7 @@
             <?php if (isset($_SESSION['user']) && is_array($_SESSION['user'])): ?>
                 <?php if (($_SESSION['user']['role'] ?? '') === 'admin'): ?>
                     <a href="/admin">Quản trị</a>
+                    <a href="/admin/users">Tài khoản</a>
                     <a href="/admin/orders">Đơn hàng</a>
                 <?php else: ?>
                     <a href="/account">Tài khoản</a>

@@ -20,4 +20,9 @@
         <strong><?= e($orderStats['pendingCount']) ?></strong>
         <a href="/admin/orders">Xử lý đơn hàng</a>
     </article>
+    <article class="admin-stat-card">
+        <span>Tài khoản trong hệ thống</span>
+        <strong><?= e($userCount) ?></strong>
+        <a href="/admin/users">Quản lý tài khoản</a>
+    </article>
 </section>

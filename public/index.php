@@ -44,6 +44,31 @@ try {
         exit;
     }
 
+    if ($route === '/admin/users') {
+        $adminController = new AdminController();
+        if ($method === 'GET') {
+            $adminController->users();
+            exit;
+        }
+        if ($method === 'POST') {
+            $adminController->createUser();
+            exit;
+        }
+        http_response_code(405);
+        header('Allow: GET, POST');
+        exit;
+    }
+
+    if (preg_match('~\A/admin/users/([1-9][0-9]*)/status\z~', $route, $matches) === 1) {
+        if ($method === 'POST') {
+            (new AdminController())->updateUserStatus($matches[1]);
+            exit;
+        }
+        http_response_code(405);
+        header('Allow: POST');
+        exit;
+    }
+
     if ($route === '/admin/products') {
         $adminController = new AdminController();
         if ($method === 'GET') {

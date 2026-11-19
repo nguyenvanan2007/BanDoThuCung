@@ -28,7 +28,87 @@ final class AdminController extends Controller
             'title' => 'Quản trị | TPet',
             'activeProductCount' => $products->countActive(),
             'orderStats' => $orders->dashboardStats(),
+            'userCount' => count((new User($connection))->findAll()),
         ]);
+    }
+
+    public function users(): void
+    {
+        if (!$this->requireAdmin()) {
+            return;
+        }
+
+        $this->render('admin/users', [
+            'title' => 'Quản lý tài khoản | TPet',
+            'users' => (new User(Database::connection()))->findAll(),
+            'errors' => [],
+        ]);
+    }
+
+    public function createUser(): void
+    {
+        if (!$this->requireAdmin()) {
+            return;
+        }
+        if (!$this->hasValidCsrfToken()) {
+            $this->showForbidden();
+            return;
+        }
+
+        $name = $this->postText('name');
+        $email = mb_strtolower($this->postText('email'), 'UTF-8');
+        $password = $_POST['password'] ?? '';
+        $role = $this->postText('role');
+        $errors = [];
+
+        if (mb_strlen($name) < 2 || mb_strlen($name) > 100) {
+            $errors[] = 'Họ tên cần có từ 2 đến 100 ký tự.';
+        }
+        if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+            $errors[] = 'Email không hợp lệ.';
+        }
+        if (!is_string($password) || mb_strlen($password) < 6) {
+            $errors[] = 'Mật khẩu cần có ít nhất 6 ký tự.';
+        }
+        if (!in_array($role, ['customer', 'admin'], true)) {
+            $errors[] = 'Vai trò tài khoản không hợp lệ.';
+        }
+
+        $manager = new User(Database::connection());
+        if ($errors === [] && !$manager->createManagedAccount($name, $email, $password, $role)) {
+            $errors[] = 'Email đã được sử dụng hoặc không thể tạo tài khoản.';
+        }
+
+        if ($errors !== []) {
+            $this->render('admin/users', [
+                'title' => 'Quản lý tài khoản | TPet',
+                'users' => $manager->findAll(),
+                'errors' => $errors,
+            ]);
+            return;
+        }
+
+        $this->flashSuccess('Đã tạo tài khoản.');
+        $this->redirect('/admin/users');
+    }
+
+    public function updateUserStatus(string $userId): void
+    {
+        if (!$this->requireAdmin()) {
+            return;
+        }
+        if (!$this->hasValidCsrfToken()) {
+            $this->showForbidden();
+            return;
+        }
+
+        $isActive = $this->postText('is_active') === '1';
+        if (!(new User(Database::connection()))->setActive($userId, $isActive)) {
+            $this->flashError('Tài khoản admin không được khóa hoặc mở khóa.');
+        } else {
+            $this->flashSuccess($isActive ? 'Đã mở khóa tài khoản.' : 'Đã khóa tài khoản.');
+        }
+        $this->redirect('/admin/users');
     }
 
     public function products(): void
