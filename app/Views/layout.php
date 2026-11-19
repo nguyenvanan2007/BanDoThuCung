@@ -59,7 +59,14 @@
         <?= $content ?? '' ?>
     </main>
     <footer class="site-footer">
-        <p>TPet <span aria-hidden="true">&middot;</span> Cửa hàng thức ăn cho thú cưng</p>
+        <div class="footer-brand">
+            <strong>TPet</strong>
+            <span>Cửa hàng thức ăn cho thú cưng Địa chỉ: 123 Nguyễn Văn A, Hà Nội </span>
+        </div>
+        <address class="footer-contact">
+            <a href="tel:0977365366">SĐT: 0977 365 366</a>
+            <a href="mailto:abc@gmail.com">Email: abc@gmail.com</a>
+        </address>
     </footer>
 </body>
 </html>
