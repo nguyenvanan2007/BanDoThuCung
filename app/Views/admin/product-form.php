@@ -9,7 +9,7 @@ if ($variantRows === []) {
 <section class="page-heading">
     <p class="eyebrow"><a href="/admin">Quản trị</a> / <a href="/admin/products">Sản phẩm</a></p>
     <h1><?= $isEditing ? 'Sửa sản phẩm' : 'Thêm sản phẩm' ?></h1>
-    <p class="page-description">Ảnh được chọn từ các file có sẵn trong thư mục ảnh sản phẩm của dự án.</p>
+    <p class="page-description">Chọn tối đa 10 ảnh có sẵn hoặc tải thêm một ảnh JPG, PNG hay WebP (tối đa 5 MB).</p>
 </section>
 
 <section class="admin-form-card">
@@ -24,7 +24,7 @@ if ($variantRows === []) {
         </div>
     <?php endif; ?>
 
-    <form class="admin-product-form" method="post" action="<?= e($formAction) ?>">
+    <form class="admin-product-form" method="post" action="<?= e($formAction) ?>" enctype="multipart/form-data">
         <input type="hidden" name="_csrf_token" value="<?= e(csrf_token()) ?>">
 
         <label for="sku">Mã sản phẩm</label>
@@ -68,6 +68,10 @@ if ($variantRows === []) {
                 </div>
             <?php endif; ?>
         </fieldset>
+
+        <label for="image_file">Tải thêm ảnh từ thiết bị (không bắt buộc)</label>
+        <input id="image_file" name="image_file" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+        <small>Ảnh tải lên sẽ trở thành ảnh đại diện và được thêm vào thư viện ảnh của sản phẩm.</small>
 
         <fieldset class="admin-variants">
             <legend>Biến thể (không bắt buộc)</legend>

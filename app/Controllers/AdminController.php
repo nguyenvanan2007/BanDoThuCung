@@ -31,7 +31,87 @@ final class AdminController extends Controller
             'title' => 'Quản trị | TPet',
             'activeProductCount' => $products->countActive(),
             'orderStats' => $orders->dashboardStats(),
+            'userCount' => count((new User($connection))->findAll()),
         ]);
+    }
+
+    public function users(): void
+    {
+        if (!$this->requireAdmin()) {
+            return;
+        }
+
+        $this->render('admin/users', [
+            'title' => 'Quản lý tài khoản | TPet',
+            'users' => (new User(Database::connection()))->findAll(),
+            'errors' => [],
+        ]);
+    }
+
+    public function createUser(): void
+    {
+        if (!$this->requireAdmin()) {
+            return;
+        }
+        if (!$this->hasValidCsrfToken()) {
+            $this->showForbidden();
+            return;
+        }
+
+        $name = $this->postText('name');
+        $email = mb_strtolower($this->postText('email'), 'UTF-8');
+        $password = $_POST['password'] ?? '';
+        $role = $this->postText('role');
+        $errors = [];
+
+        if (mb_strlen($name) < 2 || mb_strlen($name) > 100) {
+            $errors[] = 'Họ tên cần có từ 2 đến 100 ký tự.';
+        }
+        if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+            $errors[] = 'Email không hợp lệ.';
+        }
+        if (!is_string($password) || mb_strlen($password) < 6) {
+            $errors[] = 'Mật khẩu cần có ít nhất 6 ký tự.';
+        }
+        if (!in_array($role, ['customer', 'admin'], true)) {
+            $errors[] = 'Vai trò tài khoản không hợp lệ.';
+        }
+
+        $manager = new User(Database::connection());
+        if ($errors === [] && !$manager->createManagedAccount($name, $email, $password, $role)) {
+            $errors[] = 'Email đã được sử dụng hoặc không thể tạo tài khoản.';
+        }
+
+        if ($errors !== []) {
+            $this->render('admin/users', [
+                'title' => 'Quản lý tài khoản | TPet',
+                'users' => $manager->findAll(),
+                'errors' => $errors,
+            ]);
+            return;
+        }
+
+        $this->flashSuccess('Đã tạo tài khoản.');
+        $this->redirect('/admin/users');
+    }
+
+    public function updateUserStatus(string $userId): void
+    {
+        if (!$this->requireAdmin()) {
+            return;
+        }
+        if (!$this->hasValidCsrfToken()) {
+            $this->showForbidden();
+            return;
+        }
+
+        $isActive = $this->postText('is_active') === '1';
+        if (!(new User(Database::connection()))->setActive($userId, $isActive)) {
+            $this->flashError('Tài khoản admin không được khóa hoặc mở khóa.');
+        } else {
+            $this->flashSuccess($isActive ? 'Đã mở khóa tài khoản.' : 'Đã khóa tài khoản.');
+        }
+        $this->redirect('/admin/users');
     }
 
     public function products(): void
@@ -149,7 +229,7 @@ final class AdminController extends Controller
             return;
         }
         $manager = new AdminProductManager(Database::connection());
-        [$data, $errors] = $this->validatedProductData($manager);
+        [$data, $errors, $uploadedImagePath] = $this->validatedProductData($manager);
         if ($errors !== []) {
             $this->renderProductForm($this->productFormData($data), $errors, false, $manager->findCategories(true));
             return;
@@ -158,6 +238,7 @@ final class AdminController extends Controller
         try {
             $manager->create($data);
         } catch (PDOException $exception) {
+            $this->removeUploadedProductImage($uploadedImagePath);
             if (($exception->errorInfo[0] ?? (string) $exception->getCode()) !== '23000') {
                 throw $exception;
             }
@@ -169,6 +250,9 @@ final class AdminController extends Controller
                 $manager->findCategories(true)
             );
             return;
+        } catch (\Throwable $exception) {
+            $this->removeUploadedProductImage($uploadedImagePath);
+            throw $exception;
         }
 
         $this->flashSuccess('Đã thêm sản phẩm.');
@@ -207,7 +291,7 @@ final class AdminController extends Controller
             return;
         }
 
-        [$data, $errors] = $this->validatedProductData($manager);
+        [$data, $errors, $uploadedImagePath] = $this->validatedProductData($manager);
         if ($errors !== []) {
             $this->renderProductForm($this->productFormData($data, $productId), $errors, true, $manager->findCategories(true));
             return;
@@ -216,6 +300,7 @@ final class AdminController extends Controller
         try {
             $manager->update($productId, $data);
         } catch (PDOException $exception) {
+            $this->removeUploadedProductImage($uploadedImagePath);
             if (($exception->errorInfo[0] ?? (string) $exception->getCode()) !== '23000') {
                 throw $exception;
             }
@@ -227,6 +312,9 @@ final class AdminController extends Controller
                 $manager->findCategories(true)
             );
             return;
+        } catch (\Throwable $exception) {
+            $this->removeUploadedProductImage($uploadedImagePath);
+            throw $exception;
         }
 
         $this->flashSuccess('Đã lưu thay đổi sản phẩm.');
@@ -451,7 +539,7 @@ final class AdminController extends Controller
             $variants[] = $variant;
         }
 
-        return [[
+        $data = [
             'sku' => $sku,
             'name' => $name,
             'species' => (string) ($category['species'] ?? ''),
@@ -464,7 +552,27 @@ final class AdminController extends Controller
             'stock_quantity' => $stock ?? 0,
             'is_active' => $isActive,
             'variants' => $variants,
-        ], $errors];
+        ];
+
+        $uploadedImagePath = null;
+        if ($errors === []) {
+            [$uploadedImagePath, $uploadError] = $this->storeUploadedProductImage();
+            if ($uploadError !== null) {
+                $errors[] = $uploadError;
+            } elseif ($uploadedImagePath !== null) {
+                if (count($images) >= 10) {
+                    $this->removeUploadedProductImage($uploadedImagePath);
+                    $uploadedImagePath = null;
+                    $errors[] = 'Chỉ được chọn tối đa 10 ảnh cho mỗi sản phẩm.';
+                } else {
+                    array_unshift($images, $uploadedImagePath);
+                    $data['images'] = $images;
+                    $data['image_path'] = $uploadedImagePath;
+                }
+            }
+        }
+
+        return [$data, $errors, $uploadedImagePath];
     }
 
     private function renderProductForm(array $product, array $errors, bool $isEditing, array $categories): void
@@ -549,11 +657,7 @@ final class AdminController extends Controller
 
     private function availableProductImages(): array
     {
-        $directory = dirname(__DIR__, 2)
-            . DIRECTORY_SEPARATOR . 'public'
-            . DIRECTORY_SEPARATOR . 'assets'
-            . DIRECTORY_SEPARATOR . 'images'
-            . DIRECTORY_SEPARATOR . 'products';
+        $directory = $this->productImageDirectory();
         $files = glob($directory . DIRECTORY_SEPARATOR . '*') ?: [];
         $images = [];
 
@@ -571,6 +675,77 @@ final class AdminController extends Controller
         sort($images);
 
         return $images;
+    }
+
+    private function storeUploadedProductImage(): array
+    {
+        $file = $_FILES['image_file'] ?? null;
+        if (!is_array($file)) {
+            return [null, 'Không nhận được tệp ảnh tải lên.'];
+        }
+
+        $error = $file['error'] ?? UPLOAD_ERR_NO_FILE;
+        if ($error === UPLOAD_ERR_NO_FILE) {
+            return [null, null];
+        }
+        if ($error !== UPLOAD_ERR_OK) {
+            return [null, match ($error) {
+                UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => 'Ảnh vượt quá dung lượng máy chủ cho phép.',
+                UPLOAD_ERR_PARTIAL => 'Ảnh tải lên chưa hoàn tất. Vui lòng thử lại.',
+                default => 'Không thể tải ảnh lên. Vui lòng thử lại.',
+            }];
+        }
+
+        $temporaryPath = $file['tmp_name'] ?? null;
+        $fileSize = $file['size'] ?? null;
+        if (!is_string($temporaryPath)
+            || !is_int($fileSize)
+            || $fileSize < 1
+            || $fileSize > 5 * 1024 * 1024
+            || !is_uploaded_file($temporaryPath)) {
+            return [null, 'Ảnh phải hợp lệ và không lớn hơn 5 MB.'];
+        }
+
+        $image = @getimagesize($temporaryPath);
+        $extension = is_array($image) ? match ($image['mime'] ?? '') {
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            default => null,
+        } : null;
+        if ($extension === null) {
+            return [null, 'Định dạng ảnh không hợp lệ. Chỉ chấp nhận JPG, PNG hoặc WebP.'];
+        }
+
+        $directory = $this->productImageDirectory();
+        $filename = bin2hex(random_bytes(16)) . '.' . $extension;
+        $destination = $directory . DIRECTORY_SEPARATOR . $filename;
+        if (!move_uploaded_file($temporaryPath, $destination)) {
+            return [null, 'Không thể lưu ảnh vào thư mục sản phẩm.'];
+        }
+
+        return ['/assets/images/products/' . $filename, null];
+    }
+
+    private function productImageDirectory(): string
+    {
+        return dirname(__DIR__, 2)
+            . DIRECTORY_SEPARATOR . 'public'
+            . DIRECTORY_SEPARATOR . 'assets'
+            . DIRECTORY_SEPARATOR . 'images'
+            . DIRECTORY_SEPARATOR . 'products';
+    }
+
+    private function removeUploadedProductImage(?string $imagePath): void
+    {
+        if ($imagePath === null || safe_product_image_path($imagePath) === null) {
+            return;
+        }
+
+        $imageFile = $this->productImageDirectory() . DIRECTORY_SEPARATOR . basename($imagePath);
+        if (is_file($imageFile)) {
+            unlink($imageFile);
+        }
     }
 
     private function postInteger(string $key): ?int

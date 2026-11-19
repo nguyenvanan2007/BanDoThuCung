@@ -31,6 +31,7 @@
                     <a href="/admin">Quản trị</a>
                     <a href="/admin/products">Sản phẩm</a>
                     <a href="/admin/categories">Danh mục</a>
+                    <a href="/admin/users">Tài khoản</a>
                     <a href="/admin/orders">Đơn hàng</a>
                 <?php else: ?>
                     <a href="/account">Tài khoản</a>

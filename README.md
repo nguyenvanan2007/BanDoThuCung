@@ -4,7 +4,7 @@ Khung ứng dụng PHP 8.1+, OOP/MVC, Composer PSR-4, PDO và MySQL. Website t�
 
 ## Trạng thái hiện tại
 
-Ứng dụng có catalog sản phẩm (demo/MySQL), tìm kiếm và bộ lọc, danh mục quản trị, biến thể với giá/tồn riêng, nhiều ảnh cho sản phẩm, tài khoản khách hàng, giỏ hàng, đơn COD, lịch sử trạng thái và email thông báo cho đơn hàng.
+Ứng dụng có catalog sản phẩm (demo/MySQL), tìm kiếm và bộ lọc, quản lý danh mục và tài khoản, biến thể với giá/tồn riêng, nhiều ảnh cho sản phẩm, giỏ hàng, đơn COD, lịch sử trạng thái và email thông báo đơn hàng.
 
 ## Chạy cục bộ
 
@@ -19,7 +19,7 @@ Khung ứng dụng PHP 8.1+, OOP/MVC, Composer PSR-4, PDO và MySQL. Website t�
 
 5. Mở `http://127.0.0.1:8000`.
 
-Mặc định `CATALOG_SOURCE=demo` để xem catalog mà không cần database. Để dùng tài khoản, quản trị và đặt hàng, cấu hình MySQL trong `.env` rồi import `database/schema.sql`; tùy chọn import `database/seed_demo.sql` một lần để thêm sản phẩm minh họa. Đặt `CATALOG_SOURCE=database` để catalog đọc dữ liệu MySQL. Sản phẩm demo không thể đặt hàng. Ảnh sản phẩm phải là ảnh cửa hàng có quyền sử dụng; chép ảnh vào `public/assets/images/products/` rồi chọn ảnh trong form quản trị. Form hiện chọn từ ảnh đã có trong thư mục, chưa tải file ảnh trực tiếp lên server.
+Mặc định `CATALOG_SOURCE=demo` để xem catalog mà không cần database. Để dùng tài khoản, quản trị và đặt hàng, cấu hình MySQL trong `.env` rồi import `database/schema.sql`; tùy chọn import `database/seed_demo.sql` một lần để thêm sản phẩm minh họa. Đặt `CATALOG_SOURCE=database` để catalog đọc dữ liệu MySQL. Sản phẩm demo không thể đặt hàng. Ảnh sản phẩm phải là ảnh cửa hàng có quyền sử dụng; có thể chép ảnh vào `public/assets/images/products/` để chọn tối đa 10 ảnh có sẵn, hoặc tải thêm một ảnh JPG, PNG hay WebP (tối đa 5 MB) trong form quản trị.
 
 `SHIPPING_FEE` phải là số nguyên không âm tính theo VND; `SHIPPING_FEE=0` nghĩa là miễn phí giao hàng. Phí được tính lại trên server và lưu cùng đơn; tổng tiền gửi từ trình duyệt không được dùng làm căn cứ. Thanh toán hiện hỗ trợ COD, còn số lượng tồn được khóa và xác thực trong transaction trước khi tạo đơn. Nếu giỏ có sản phẩm/biến thể không còn hàng hoặc tổng tiền vượt giới hạn, khách cần cập nhật giỏ trước khi đặt hàng.
 
@@ -39,7 +39,7 @@ SET role = 'admin'
 WHERE email = 'an123@gmail.com' AND is_active = 1;
 ```
 
-Không có tài khoản hoặc mật khẩu admin mặc định. Đăng nhập bằng tài khoản vừa được cấp quyền sẽ chuyển tới `/admin`. Quản trị viên có thể quản lý danh mục theo thú cưng/loại thức ăn, sản phẩm, nhiều ảnh và biến thể (SKU, quy cách, giá, tồn kho), xem đơn và chuyển trạng thái. Khách hàng có thể tự hủy đơn khi còn chờ xác nhận; admin có thể hủy đơn đang chờ hoặc đã xác nhận. Mỗi lần hủy, tồn kho của sản phẩm và biến thể được hoàn lại trong cùng transaction. Sản phẩm đã có trong đơn không thể xóa để bảo toàn lịch sử; hãy ẩn sản phẩm thay thế. Sản phẩm DEMO không xuất hiện trong quản trị.
+Không có tài khoản hoặc mật khẩu admin mặc định. Đăng nhập bằng tài khoản vừa được cấp quyền sẽ chuyển tới `/admin`. Quản trị viên có thể quản lý tài khoản, danh mục theo thú cưng/loại thức ăn, sản phẩm, nhiều ảnh và biến thể (SKU, quy cách, giá, tồn kho), xem đơn và chuyển trạng thái. Khách hàng có thể tự hủy đơn khi còn chờ xác nhận; admin có thể hủy đơn đang chờ hoặc đã xác nhận. Mỗi lần hủy, tồn kho của sản phẩm và biến thể được hoàn lại trong cùng transaction. Sản phẩm đã có trong đơn không thể xóa để bảo toàn lịch sử; hãy ẩn sản phẩm thay thế. Sản phẩm DEMO không xuất hiện trong quản trị.
 
 Ảnh Pedigree trong bản xem thử do chủ dự án cung cấp. Các ảnh minh họa bổ sung trong catalog được lấy từ Wikimedia Commons: [Catfood.jpg](https://commons.wikimedia.org/wiki/File:Catfood.jpg) và [Cat_Food.jpg](https://commons.wikimedia.org/wiki/File:Cat_Food.jpg) thuộc phạm vi công cộng; [Cat eating wet plant-based cat food](https://commons.wikimedia.org/wiki/File:Cat_eating_wet_plant-based_cat_food.jpg) của Jay KapLon theo [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); [Dog Food](https://commons.wikimedia.org/wiki/File:Dog_Food_(208810939).jpg) của chrismetcalfTV theo [CC BY 2.0](https://creativecommons.org/licenses/by/2.0/). Ảnh Commons chỉ dùng minh họa trong catalog DEMO, không xác nhận bao bì hay SKU đang bán.
 

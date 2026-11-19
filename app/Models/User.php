@@ -71,6 +71,20 @@ final class User
         ];
     }
 
+    public function authenticateSuspended(string $email, string $password): bool
+    {
+        $statement = $this->connection->prepare(
+            'SELECT password_hash FROM users WHERE email = :email AND is_active = :is_active LIMIT 1'
+        );
+        $statement->execute([
+            'email' => $email,
+            'is_active' => 0,
+        ]);
+        $passwordHash = $statement->fetchColumn();
+
+        return is_string($passwordHash) && password_verify($password, $passwordHash);
+    }
+
     public function isActiveAdministrator(string $userId): bool
     {
         $statement = $this->connection->prepare(
@@ -84,4 +98,56 @@ final class User
 
         return $statement->fetchColumn() !== false;
     }
+
+    public function findAll(): array
+    {
+        $statement = $this->connection->query(
+            'SELECT id, name, email, role, is_active, created_at'
+            . ' FROM users ORDER BY created_at DESC, id DESC'
+        );
+
+        return $statement->fetchAll();
+    }
+
+    public function createManagedAccount(string $name, string $email, string $password, string $role): bool
+    {
+        if (!in_array($role, ['customer', 'admin'], true)) {
+            return false;
+        }
+
+        $statement = $this->connection->prepare(
+            'INSERT INTO users (name, email, password_hash, role, is_active)'
+            . ' VALUES (:name, :email, :password_hash, :role, 1)'
+        );
+
+        try {
+            return $statement->execute([
+                'name' => $name,
+                'email' => $email,
+                'password_hash' => password_hash($password, PASSWORD_DEFAULT),
+                'role' => $role,
+            ]);
+        } catch (PDOException $exception) {
+            if (($exception->errorInfo[0] ?? (string) $exception->getCode()) === '23000') {
+                return false;
+            }
+
+            throw $exception;
+        }
+    }
+
+    public function setActive(string $userId, bool $isActive): bool
+    {
+        $statement = $this->connection->prepare(
+            'UPDATE users SET is_active = :is_active'
+            . ' WHERE id = :id AND role <> :admin_role'
+        );
+
+        return $statement->execute([
+            'is_active' => $isActive ? 1 : 0,
+            'id' => $userId,
+            'admin_role' => 'admin',
+        ]) && $statement->rowCount() === 1;
+    }
+
 }
