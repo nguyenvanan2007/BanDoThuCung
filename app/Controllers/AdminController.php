@@ -142,7 +142,7 @@ final class AdminController extends Controller
             return;
         }
 
-        [$data, $errors] = $this->validatedProductData();
+        [$data, $errors, $uploadedImagePath] = $this->validatedProductData();
         if ($errors !== []) {
             $this->renderProductForm($this->productFormData($data), $errors, false);
             return;
@@ -151,6 +151,7 @@ final class AdminController extends Controller
         try {
             (new AdminProductManager(Database::connection()))->create($data);
         } catch (PDOException $exception) {
+            $this->removeUploadedProductImage($uploadedImagePath);
             if (($exception->errorInfo[0] ?? (string) $exception->getCode()) !== '23000') {
                 throw $exception;
             }
@@ -161,6 +162,9 @@ final class AdminController extends Controller
                 false
             );
             return;
+        } catch (\Throwable $exception) {
+            $this->removeUploadedProductImage($uploadedImagePath);
+            throw $exception;
         }
 
         $this->flashSuccess('Đã thêm sản phẩm.');
@@ -199,7 +203,7 @@ final class AdminController extends Controller
             return;
         }
 
-        [$data, $errors] = $this->validatedProductData();
+        [$data, $errors, $uploadedImagePath] = $this->validatedProductData();
         if ($errors !== []) {
             $this->renderProductForm($this->productFormData($data, $productId), $errors, true);
             return;
@@ -208,6 +212,7 @@ final class AdminController extends Controller
         try {
             $manager->update($productId, $data);
         } catch (PDOException $exception) {
+            $this->removeUploadedProductImage($uploadedImagePath);
             if (($exception->errorInfo[0] ?? (string) $exception->getCode()) !== '23000') {
                 throw $exception;
             }
@@ -218,6 +223,9 @@ final class AdminController extends Controller
                 true
             );
             return;
+        } catch (\Throwable $exception) {
+            $this->removeUploadedProductImage($uploadedImagePath);
+            throw $exception;
         }
 
         $this->flashSuccess('Đã lưu thay đổi sản phẩm.');
@@ -313,7 +321,6 @@ final class AdminController extends Controller
         $price = $this->postInteger('price_vnd');
         $stock = $this->postInteger('stock_quantity');
         $isActive = $this->postText('is_active') === '1' ? 1 : 0;
-        $availableImages = $this->availableProductImages();
         $errors = [];
 
         if (preg_match('/\A[A-Za-z0-9_-]{1,64}\z/', $sku) !== 1) {
@@ -338,11 +345,12 @@ final class AdminController extends Controller
             $errors[] = 'Tồn kho phải là số nguyên từ 0 đến 1.000.000.000.';
         }
         if ($imagePath !== ''
-            && (!in_array($imagePath, $availableImages, true) || safe_product_image_path($imagePath) === null)) {
+            && (!in_array($imagePath, $this->availableProductImages(), true)
+                || safe_product_image_path($imagePath) === null)) {
             $errors[] = 'Ảnh phải được chọn từ các file có sẵn trong thư mục ảnh sản phẩm.';
         }
 
-        return [[
+        $data = [
             'sku' => $sku,
             'name' => $name,
             'species' => $species,
@@ -352,7 +360,19 @@ final class AdminController extends Controller
             'price_vnd' => $price ?? 0,
             'stock_quantity' => $stock ?? 0,
             'is_active' => $isActive,
-        ], $errors];
+        ];
+
+        $uploadedImagePath = null;
+        if ($errors === []) {
+            [$uploadedImagePath, $uploadError] = $this->storeUploadedProductImage();
+            if ($uploadError !== null) {
+                $errors[] = $uploadError;
+            } elseif ($uploadedImagePath !== null) {
+                $data['image_path'] = $uploadedImagePath;
+            }
+        }
+
+        return [$data, $errors, $uploadedImagePath];
     }
 
     private function renderProductForm(array $product, array $errors, bool $isEditing): void
@@ -400,11 +420,7 @@ final class AdminController extends Controller
 
     private function availableProductImages(): array
     {
-        $directory = dirname(__DIR__, 2)
-            . DIRECTORY_SEPARATOR . 'public'
-            . DIRECTORY_SEPARATOR . 'assets'
-            . DIRECTORY_SEPARATOR . 'images'
-            . DIRECTORY_SEPARATOR . 'products';
+        $directory = $this->productImageDirectory();
         $files = glob($directory . DIRECTORY_SEPARATOR . '*') ?: [];
         $images = [];
 
@@ -422,6 +438,77 @@ final class AdminController extends Controller
         sort($images);
 
         return $images;
+    }
+
+    private function storeUploadedProductImage(): array
+    {
+        $file = $_FILES['image_file'] ?? null;
+        if (!is_array($file)) {
+            return [null, 'Không nhận được tệp ảnh tải lên.'];
+        }
+
+        $error = $file['error'] ?? UPLOAD_ERR_NO_FILE;
+        if ($error === UPLOAD_ERR_NO_FILE) {
+            return [null, null];
+        }
+        if ($error !== UPLOAD_ERR_OK) {
+            return [null, match ($error) {
+                UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => 'Ảnh vượt quá dung lượng máy chủ cho phép.',
+                UPLOAD_ERR_PARTIAL => 'Ảnh tải lên chưa hoàn tất. Vui lòng thử lại.',
+                default => 'Không thể tải ảnh lên. Vui lòng thử lại.',
+            }];
+        }
+
+        $temporaryPath = $file['tmp_name'] ?? null;
+        $fileSize = $file['size'] ?? null;
+        if (!is_string($temporaryPath)
+            || !is_int($fileSize)
+            || $fileSize < 1
+            || $fileSize > 5 * 1024 * 1024
+            || !is_uploaded_file($temporaryPath)) {
+            return [null, 'Ảnh phải hợp lệ và không lớn hơn 5 MB.'];
+        }
+
+        $image = @getimagesize($temporaryPath);
+        $extension = is_array($image) ? match ($image['mime'] ?? '') {
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            default => null,
+        } : null;
+        if ($extension === null) {
+            return [null, 'Định dạng ảnh không hợp lệ. Chỉ chấp nhận JPG, PNG hoặc WebP.'];
+        }
+
+        $directory = $this->productImageDirectory();
+        $filename = bin2hex(random_bytes(16)) . '.' . $extension;
+        $destination = $directory . DIRECTORY_SEPARATOR . $filename;
+        if (!move_uploaded_file($temporaryPath, $destination)) {
+            return [null, 'Không thể lưu ảnh vào thư mục sản phẩm.'];
+        }
+
+        return ['/assets/images/products/' . $filename, null];
+    }
+
+    private function productImageDirectory(): string
+    {
+        return dirname(__DIR__, 2)
+            . DIRECTORY_SEPARATOR . 'public'
+            . DIRECTORY_SEPARATOR . 'assets'
+            . DIRECTORY_SEPARATOR . 'images'
+            . DIRECTORY_SEPARATOR . 'products';
+    }
+
+    private function removeUploadedProductImage(?string $imagePath): void
+    {
+        if ($imagePath === null || safe_product_image_path($imagePath) === null) {
+            return;
+        }
+
+        $imageFile = $this->productImageDirectory() . DIRECTORY_SEPARATOR . basename($imagePath);
+        if (is_file($imageFile)) {
+            unlink($imageFile);
+        }
     }
 
     private function postInteger(string $key): ?int

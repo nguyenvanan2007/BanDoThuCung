@@ -5,7 +5,7 @@ $selectedImage = is_string($product['imagePath'] ?? null) ? $product['imagePath'
 <section class="page-heading">
     <p class="eyebrow"><a href="/admin">Quản trị</a> / <a href="/admin/products">Sản phẩm</a></p>
     <h1><?= $isEditing ? 'Sửa sản phẩm' : 'Thêm sản phẩm' ?></h1>
-    <p class="page-description">Chỉ chọn ảnh có sẵn trong thư mục ảnh sản phẩm của dự án.</p>
+    <p class="page-description">Chọn ảnh có sẵn hoặc tải ảnh từ thiết bị của bạn lên cửa hàng.</p>
 </section>
 
 <section class="admin-form-card">
@@ -20,7 +20,7 @@ $selectedImage = is_string($product['imagePath'] ?? null) ? $product['imagePath'
         </div>
     <?php endif; ?>
 
-    <form class="admin-product-form" method="post" action="<?= e($formAction) ?>">
+    <form class="admin-product-form" method="post" action="<?= e($formAction) ?>" enctype="multipart/form-data">
         <input type="hidden" name="_csrf_token" value="<?= e(csrf_token()) ?>">
 
         <label for="sku">Mã sản phẩm</label>
@@ -56,6 +56,9 @@ $selectedImage = is_string($product['imagePath'] ?? null) ? $product['imagePath'
                 <option value="<?= e($image) ?>" <?= $selectedImage === $image ? 'selected' : '' ?>><?= e(basename($image)) ?></option>
             <?php endforeach; ?>
         </select>
+        <label for="image_file">Hoặc chọn ảnh mới từ thiết bị</label>
+        <input id="image_file" name="image_file" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+        <small>Chấp nhận JPG, PNG hoặc WebP, dung lượng tối đa 5 MB. Ảnh mới sẽ thay ảnh đã chọn ở trên.</small>
         <?php if ($selectedImage !== ''): ?>
             <img class="admin-image-preview" src="<?= e($selectedImage) ?>" alt="Ảnh xem trước sản phẩm">
         <?php endif; ?>

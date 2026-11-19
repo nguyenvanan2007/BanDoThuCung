@@ -7,7 +7,7 @@ Khung ứng dụng PHP 8.1+, OOP/MVC, Composer PSR-4, PDO và MySQL. Website t�
  HEAD
 Khung MVC, trang chủ hiển thị danh sách và bộ lọc sản phẩm (demo/MySQL), đăng ký/đăng nhập khách hàng, đăng xuất có CSRF, trang tài khoản, giỏ hàng session, đặt đơn COD và lịch sử đơn hàng đã có. Đường dẫn `/products` chuyển về trang chủ; chi tiết sản phẩm vẫn dùng `/products/{id}`. Quản trị chưa được triển khai.
 
-Khung MVC, trang chủ, catalog sản phẩm (demo/MySQL), đăng ký/đăng nhập, giỏ hàng session, đặt đơn COD và lịch sử đơn hàng đã có. Khu quản trị yêu cầu tài khoản `admin`, cho phép quản lý sản phẩm thật, ảnh trong thư mục cục bộ và tiến trình đơn hàng.
+Khung MVC, trang chủ, catalog sản phẩm (demo/MySQL), đăng ký/đăng nhập, giỏ hàng session, đặt đơn COD và lịch sử đơn hàng đã có. Khu quản trị yêu cầu tài khoản `admin`, cho phép quản lý sản phẩm thật, ảnh sản phẩm và tiến trình đơn hàng.
 >>>>>>> 7f6584a (thêm role admin, thêm các ảnh vào sản phẩm)
 
 ## Chạy cục bộ
@@ -37,7 +37,7 @@ SET role = 'admin'
 WHERE email = 'an123@gmail.com' AND is_active = 1;
 ```
 
-Không có tài khoản hoặc mật khẩu admin mặc định. Đăng nhập bằng tài khoản vừa được cấp quyền sẽ chuyển tới `/admin`. Quản trị viên có thể thêm/sửa sản phẩm thật, chọn ảnh đã chép vào `public/assets/images/products/`, xem đơn và chuyển trạng thái theo luồng. Hủy đơn khi còn chờ xác nhận/đã xác nhận sẽ hoàn tồn kho trong cùng transaction; sản phẩm DEMO không xuất hiện trong quản trị.
+Không có tài khoản hoặc mật khẩu admin mặc định. Đăng nhập bằng tài khoản vừa được cấp quyền sẽ chuyển tới `/admin`. Quản trị viên có thể thêm/sửa sản phẩm thật, chọn ảnh có sẵn hoặc tải ảnh JPG, PNG, WebP tối đa 5 MB từ thiết bị lên `public/assets/images/products/`, xem đơn và chuyển trạng thái theo luồng. Hủy đơn khi còn chờ xác nhận/đã xác nhận sẽ hoàn tồn kho trong cùng transaction; sản phẩm DEMO không xuất hiện trong quản trị.
 
 Ảnh Pedigree trong bản xem thử do chủ dự án cung cấp. Các ảnh minh họa bổ sung trong catalog được lấy từ Wikimedia Commons: [Catfood.jpg](https://commons.wikimedia.org/wiki/File:Catfood.jpg) và [Cat_Food.jpg](https://commons.wikimedia.org/wiki/File:Cat_Food.jpg) thuộc phạm vi công cộng; [Cat eating wet plant-based cat food](https://commons.wikimedia.org/wiki/File:Cat_eating_wet_plant-based_cat_food.jpg) của Jay KapLon theo [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); [Dog Food](https://commons.wikimedia.org/wiki/File:Dog_Food_(208810939).jpg) của chrismetcalfTV theo [CC BY 2.0](https://creativecommons.org/licenses/by/2.0/). Ảnh Commons chỉ dùng minh họa trong catalog DEMO, không xác nhận bao bì hay SKU đang bán.
 
