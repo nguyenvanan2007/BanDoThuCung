@@ -10,6 +10,20 @@
     </p>
 </section>
 
+<?php if ($canCancel): ?>
+    <section class="order-cancel-panel">
+        <form method="post" action="/orders/<?= e($order['id']) ?>/cancel">
+            <input type="hidden" name="_csrf_token" value="<?= e(csrf_token()) ?>">
+            <label>
+                <input name="confirm_cancel" type="checkbox" value="1" required>
+                Tôi xác nhận muốn hủy đơn hàng này
+            </label>
+            <button class="button danger-button" type="submit">Hủy đơn hàng</button>
+        </form>
+        <p>Chỉ có thể tự hủy khi đơn hàng còn chờ xác nhận.</p>
+    </section>
+<?php endif; ?>
+
 <section class="order-detail-page">
     <div class="order-detail-card">
         <h2>Sản phẩm</h2>

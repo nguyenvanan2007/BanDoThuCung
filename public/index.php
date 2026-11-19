@@ -60,6 +60,33 @@ try {
         exit;
     }
 
+    if ($route === '/admin/categories') {
+        $adminController = new AdminController();
+        if ($method === 'GET') {
+            $adminController->categories();
+            exit;
+        }
+        if ($method === 'POST') {
+            $adminController->createCategory();
+            exit;
+        }
+
+        http_response_code(405);
+        header('Allow: GET, POST');
+        exit;
+    }
+
+    if (preg_match('~\A/admin/categories/([1-9][0-9]*)/toggle\z~', $route, $matches) === 1) {
+        if ($method === 'POST') {
+            (new AdminController())->toggleCategory($matches[1]);
+            exit;
+        }
+
+        http_response_code(405);
+        header('Allow: POST');
+        exit;
+    }
+
     if ($route === '/admin/products/new') {
         if ($method === 'GET') {
             (new AdminController())->newProduct();
@@ -68,6 +95,17 @@ try {
 
         http_response_code(405);
         header('Allow: GET');
+        exit;
+    }
+
+    if (preg_match('~\A/admin/products/([1-9][0-9]*)/delete\z~', $route, $matches) === 1) {
+        if ($method === 'POST') {
+            (new AdminController())->deleteProduct($matches[1]);
+            exit;
+        }
+
+        http_response_code(405);
+        header('Allow: POST');
         exit;
     }
 
@@ -160,6 +198,17 @@ try {
 
     if ($route === '/orders' && $method === 'GET') {
         (new OrderController())->index();
+        exit;
+    }
+
+    if (preg_match('~\A/orders/([1-9][0-9]*)/cancel\z~', $route, $matches) === 1) {
+        if ($method === 'POST') {
+            (new OrderController())->cancel($matches[1]);
+            exit;
+        }
+
+        http_response_code(405);
+        header('Allow: POST');
         exit;
     }
 

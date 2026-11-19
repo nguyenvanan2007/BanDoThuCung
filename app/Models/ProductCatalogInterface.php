@@ -10,5 +10,9 @@ interface ProductCatalogInterface
 
     public function findById(string $id): ?array;
 
+    public function findVariant(string $productId, string $variantId): ?array;
+
+    public function categories(): array;
+
     public function isDemoMode(): bool;
 }

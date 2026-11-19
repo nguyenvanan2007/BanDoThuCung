@@ -95,7 +95,17 @@ final class AdminOrderManager
         return self::STATUS_TRANSITIONS[$status] ?? [];
     }
 
-    public function updateStatus(string $orderId, string $nextStatus, string $changedByUserId): void
+    public function cancelForCustomer(string $orderId, string $customerUserId): bool
+    {
+        return $this->updateStatus($orderId, 'cancelled', $customerUserId, $customerUserId);
+    }
+
+    public function updateStatus(
+        string $orderId,
+        string $nextStatus,
+        string $changedByUserId,
+        ?string $customerUserId = null
+    ): bool
     {
         if (!in_array($nextStatus, ['pending', 'confirmed', 'shipping', 'completed', 'cancelled'], true)) {
             throw new DomainException('Trạng thái đơn hàng không hợp lệ.');
@@ -108,18 +118,26 @@ final class AdminOrderManager
                 ? ' FOR UPDATE'
                 : '';
             $currentStatement = $this->connection->prepare(
-                'SELECT status FROM orders WHERE id = :id' . $lockClause
+                'SELECT status, user_id FROM orders WHERE id = :id' . $lockClause
             );
             $currentStatement->execute(['id' => $orderId]);
-            $currentStatus = $currentStatement->fetchColumn();
+            $currentOrder = $currentStatement->fetch();
 
-            if (!is_string($currentStatus)) {
+            if (!is_array($currentOrder)) {
                 throw new DomainException('Không tìm thấy đơn hàng.');
             }
+            if ($customerUserId !== null && (string) $currentOrder['user_id'] !== $customerUserId) {
+                throw new DomainException('Không tìm thấy đơn hàng.');
+            }
+            $currentStatus = (string) $currentOrder['status'];
 
             if ($currentStatus === $nextStatus) {
                 $this->connection->commit();
-                return;
+                return false;
+            }
+
+            if ($customerUserId !== null && $currentStatus !== 'pending') {
+                throw new DomainException('Chỉ có thể hủy đơn khi đơn hàng còn chờ xác nhận.');
             }
 
             if (!in_array($nextStatus, self::STATUS_TRANSITIONS[$currentStatus] ?? [], true)) {
@@ -128,11 +146,15 @@ final class AdminOrderManager
 
             if ($nextStatus === 'cancelled') {
                 $items = $this->connection->prepare(
-                    'SELECT product_id, quantity FROM order_items WHERE order_id = :order_id'
+                    'SELECT product_id, product_variant_id, quantity FROM order_items WHERE order_id = :order_id'
                 );
                 $items->execute(['order_id' => $orderId]);
                 $restoreStock = $this->connection->prepare(
                     'UPDATE products SET stock_quantity = stock_quantity + :quantity WHERE id = :id'
+                );
+                $restoreVariantStock = $this->connection->prepare(
+                    'UPDATE product_variants SET stock_quantity = stock_quantity + :quantity'
+                    . ' WHERE id = :id AND product_id = :product_id'
                 );
 
                 foreach ($items->fetchAll() as $item) {
@@ -142,6 +164,16 @@ final class AdminOrderManager
                     ]);
                     if ($restoreStock->rowCount() !== 1) {
                         throw new DomainException('Không thể hoàn lại tồn kho cho đơn hàng này.');
+                    }
+                    if ($item['product_variant_id'] !== null) {
+                        $restoreVariantStock->execute([
+                            'quantity' => (int) $item['quantity'],
+                            'id' => (string) $item['product_variant_id'],
+                            'product_id' => (string) $item['product_id'],
+                        ]);
+                        if ($restoreVariantStock->rowCount() !== 1) {
+                            throw new DomainException('Không thể hoàn lại tồn kho biến thể cho đơn hàng này.');
+                        }
                     }
                 }
             }
@@ -163,6 +195,7 @@ final class AdminOrderManager
                 'changed_by_user_id' => $changedByUserId,
             ]);
             $this->connection->commit();
+            return true;
         } catch (Throwable $exception) {
             if ($this->connection->inTransaction()) {
                 $this->connection->rollBack();

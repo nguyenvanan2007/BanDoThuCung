@@ -25,6 +25,14 @@ final class Order
         if ($cartItems === []) {
             throw new DomainException('Giỏ hàng đang trống.');
         }
+        if (mb_strlen($recipientName) < 2 || mb_strlen($recipientName) > 100
+            || preg_match('/\A[0-9+().\-\s]{7,20}\z/', $phone) !== 1
+            || mb_strlen($address) < 10 || mb_strlen($address) > 500) {
+            throw new DomainException('Thông tin giao hàng không hợp lệ.');
+        }
+        if ($shippingFee < 0) {
+            throw new DomainException('Phí giao hàng không hợp lệ.');
+        }
 
         $this->connection->beginTransaction();
 
@@ -43,27 +51,45 @@ final class Order
 
             $products = [];
             $subtotal = 0;
-            $productIds = array_keys($cartItems);
-            usort($productIds, static fn (string|int $left, string|int $right): int => (int) $left <=> (int) $right);
+            $cartKeys = array_keys($cartItems);
+            usort($cartKeys, static function (string|int $left, string|int $right): int {
+                preg_match('/\A([0-9]+)/', (string) $left, $leftMatch);
+                preg_match('/\A([0-9]+)/', (string) $right, $rightMatch);
+
+                return (int) ($leftMatch[1] ?? 0) <=> (int) ($rightMatch[1] ?? 0)
+                    ?: strcmp((string) $left, (string) $right);
+            });
 
             $lockClause = $this->connection->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql'
                 ? ' FOR UPDATE'
                 : '';
             $selectProduct = $this->connection->prepare(
-                'SELECT id, sku, name, image_path, price_vnd, stock_quantity, is_active, is_demo'
-                . ' FROM products WHERE id = :id' . $lockClause
+                'SELECT p.id, p.sku, p.name, p.image_path, p.price_vnd, p.stock_quantity,'
+                . ' p.is_active, p.is_demo, c.is_active AS category_active'
+                . ' FROM products p INNER JOIN product_categories c ON c.id = p.category_id'
+                . ' WHERE p.id = :id' . $lockClause
+            );
+            $selectVariant = $this->connection->prepare(
+                'SELECT id, sku, name, price_vnd, stock_quantity, is_active FROM product_variants'
+                . ' WHERE id = :id AND product_id = :product_id' . $lockClause
             );
 
-            foreach ($productIds as $productId) {
-                $quantity = $cartItems[$productId] ?? null;
+            foreach ($cartKeys as $cartKey) {
+                $parts = $this->parseCartKey((string) $cartKey);
+                if ($parts === null) {
+                    throw new DomainException('Một sản phẩm trong giỏ hàng không hợp lệ.');
+                }
+                [$productId, $variantId] = $parts;
+                $quantity = $cartItems[$cartKey] ?? null;
                 if (!is_int($quantity) || $quantity < 1) {
                     throw new DomainException('Số lượng trong giỏ hàng không hợp lệ.');
                 }
 
-                $selectProduct->execute(['id' => (string) $productId]);
+                $selectProduct->execute(['id' => $productId]);
                 $product = $selectProduct->fetch();
 
-                if (!is_array($product) || (int) $product['is_active'] !== 1) {
+                if (!is_array($product) || (int) $product['is_active'] !== 1
+                    || (int) $product['category_active'] !== 1) {
                     throw new DomainException('Một sản phẩm trong giỏ không còn được bán.');
                 }
 
@@ -71,8 +97,26 @@ final class Order
                     throw new DomainException('Không thể đặt hàng với sản phẩm dữ liệu minh họa.');
                 }
 
-                $price = (int) $product['price_vnd'];
-                if ((int) $product['stock_quantity'] < $quantity) {
+                $variant = null;
+                if ($variantId !== null) {
+                    $selectVariant->execute(['id' => $variantId, 'product_id' => $productId]);
+                    $variant = $selectVariant->fetch();
+                    if (!is_array($variant) || (int) $variant['is_active'] !== 1) {
+                        throw new DomainException('Một biến thể trong giỏ hàng không còn được bán.');
+                    }
+                } else {
+                    $variantCheck = $this->connection->prepare(
+                        'SELECT COUNT(*) FROM product_variants WHERE product_id = :product_id AND is_active = 1'
+                    );
+                    $variantCheck->execute(['product_id' => $productId]);
+                    if ((int) $variantCheck->fetchColumn() > 0) {
+                        throw new DomainException('Vui lòng chọn biến thể cho sản phẩm "' . $product['name'] . '".');
+                    }
+                }
+
+                $price = (int) ($variant['price_vnd'] ?? $product['price_vnd']);
+                $availableStock = (int) ($variant['stock_quantity'] ?? $product['stock_quantity']);
+                if ($availableStock < $quantity || (int) $product['stock_quantity'] < $quantity) {
                     throw new DomainException(
                         sprintf('Sản phẩm "%s" không đủ tồn kho.', (string) $product['name'])
                     );
@@ -88,10 +132,17 @@ final class Order
                 }
 
                 $subtotal += $lineTotal;
-                $products[(string) $productId] = [
+                $itemSku = (string) ($variant['sku'] ?? $product['sku']);
+                $itemName = mb_substr(
+                    (string) $product['name'] . ($variant === null ? '' : ' - ' . (string) $variant['name']),
+                    0,
+                    180
+                );
+                $products[(string) $cartKey] = [
                     'id' => (string) $product['id'],
-                    'sku' => (string) $product['sku'],
-                    'name' => (string) $product['name'],
+                    'variantId' => $variant === null ? null : (string) $variant['id'],
+                    'sku' => $itemSku,
+                    'name' => $itemName,
                     'imagePath' => safe_product_image_path($product['image_path'] ?? null) ?? '',
                     'price' => $price,
                     'quantity' => $quantity,
@@ -99,7 +150,7 @@ final class Order
                 ];
             }
 
-            if ($shippingFee < 0 || $subtotal > PHP_INT_MAX - $shippingFee) {
+            if ($subtotal > PHP_INT_MAX - $shippingFee) {
                 throw new DomainException('Phí giao hàng hoặc tổng giá trị đơn hàng không hợp lệ.');
             }
 
@@ -142,11 +193,16 @@ final class Order
                 . ' WHERE id = :id AND is_active = 1 AND is_demo = 0'
                 . ' AND stock_quantity >= :required_quantity'
             );
+            $decreaseVariantStock = $this->connection->prepare(
+                'UPDATE product_variants SET stock_quantity = stock_quantity - :quantity'
+                . ' WHERE id = :id AND product_id = :product_id AND is_active = 1'
+                . ' AND stock_quantity >= :required_quantity'
+            );
             $insertItem = $this->connection->prepare(
                 'INSERT INTO order_items'
-                .                 ' (order_id, product_id, product_sku, product_name, product_image_path, quantity, unit_price_vnd, subtotal_vnd)'
+                . ' (order_id, product_id, product_variant_id, product_sku, product_name, product_image_path, quantity, unit_price_vnd, subtotal_vnd)'
                 . ' VALUES'
-                . ' (:order_id, :product_id, :product_sku, :product_name, :product_image_path, :quantity, :unit_price_vnd, :subtotal_vnd)'
+                . ' (:order_id, :product_id, :product_variant_id, :product_sku, :product_name, :product_image_path, :quantity, :unit_price_vnd, :subtotal_vnd)'
             );
 
             foreach ($products as $product) {
@@ -160,10 +216,24 @@ final class Order
                         sprintf('Tồn kho sản phẩm "%s" vừa thay đổi. Hãy kiểm tra lại giỏ hàng.', $product['name'])
                     );
                 }
+                if ($product['variantId'] !== null) {
+                    $decreaseVariantStock->execute([
+                        'quantity' => $product['quantity'],
+                        'id' => $product['variantId'],
+                        'product_id' => $product['id'],
+                        'required_quantity' => $product['quantity'],
+                    ]);
+                    if ($decreaseVariantStock->rowCount() !== 1) {
+                        throw new DomainException(
+                            sprintf('Tồn kho biến thể của "%s" vừa thay đổi. Hãy kiểm tra lại giỏ hàng.', $product['name'])
+                        );
+                    }
+                }
 
                 $insertItem->execute([
                     'order_id' => $orderId,
                     'product_id' => $product['id'],
+                    'product_variant_id' => $product['variantId'],
                     'product_sku' => $product['sku'],
                     'product_name' => $product['name'],
                     'product_image_path' => $product['imagePath'],
@@ -200,9 +270,11 @@ final class Order
     public function findForCustomer(string $userId, string $orderId): ?array
     {
         $statement = $this->connection->prepare(
-            'SELECT id, order_number, recipient_name, phone, shipping_address, subtotal_vnd,'
-            . ' shipping_fee_vnd, total_vnd, payment_method, status, created_at'
-            . ' FROM orders WHERE id = :id AND user_id = :user_id LIMIT 1'
+            'SELECT o.id, o.order_number, o.recipient_name, o.phone, o.shipping_address, o.subtotal_vnd,'
+            . ' o.shipping_fee_vnd, o.total_vnd, o.payment_method, o.status, o.created_at,'
+            . ' u.name AS customer_name, u.email AS customer_email'
+            . ' FROM orders o INNER JOIN users u ON u.id = o.user_id'
+            . ' WHERE o.id = :id AND o.user_id = :user_id LIMIT 1'
         );
         $statement->execute([
             'id' => $orderId,
@@ -244,5 +316,14 @@ final class Order
         $statement->execute(['order_id' => $orderId]);
 
         return $statement->fetchAll();
+    }
+
+    private function parseCartKey(string $cartKey): ?array
+    {
+        if (preg_match('/\A([1-9][0-9]*)(?::v([1-9][0-9]*))?\z/', $cartKey, $matches) !== 1) {
+            return null;
+        }
+
+        return [$matches[1], isset($matches[2]) ? $matches[2] : null];
     }
 }

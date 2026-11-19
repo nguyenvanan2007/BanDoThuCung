@@ -18,7 +18,7 @@ final class ProductController extends Controller
         $filters = [
             'q' => $this->queryText('q'),
             'species' => $this->queryChoice('species', ['dog', 'cat']),
-            'category' => $this->queryChoice('category', ['dry', 'wet']),
+            'category' => $this->querySlug('category'),
             'priceRange' => $this->queryChoice('price', ['under_100k', '100k_200k', 'over_200k']),
             'sort' => $this->queryChoice('sort', ['price_asc', 'price_desc']),
         ];
@@ -28,6 +28,7 @@ final class ProductController extends Controller
             'title' => 'Thức ăn cho chó và mèo | TPet',
             'filters' => $filters,
             'products' => $products,
+            'categories' => $this->catalog->categories(),
             'productCount' => count($products),
             'isDemoMode' => $this->catalog->isDemoMode(),
         ]);
@@ -61,5 +62,14 @@ final class ProductController extends Controller
         $value = $_GET[$key] ?? '';
 
         return is_string($value) && in_array($value, $allowedValues, true) ? $value : '';
+    }
+
+    private function querySlug(string $key): string
+    {
+        $value = $_GET[$key] ?? '';
+
+        return is_string($value) && preg_match('/\A[a-z0-9-]{1,140}\z/', $value) === 1
+            ? $value
+            : '';
     }
 }

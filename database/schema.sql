@@ -20,12 +20,35 @@ CREATE TABLE IF NOT EXISTS users (
   DEFAULT CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS product_categories (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    name VARCHAR(120) NOT NULL,
+    slug VARCHAR(140) NOT NULL,
+    species ENUM('dog', 'cat') NOT NULL,
+    food_type ENUM('dry', 'wet') NOT NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_product_categories_slug (slug),
+    KEY idx_product_categories_type_active (species, food_type, is_active)
+) ENGINE=InnoDB
+  DEFAULT CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
+INSERT IGNORE INTO product_categories (name, slug, species, food_type)
+VALUES
+    ('Thức ăn khô cho chó', 'dog-dry', 'dog', 'dry'),
+    ('Thức ăn ướt cho chó', 'dog-wet', 'dog', 'wet'),
+    ('Thức ăn khô cho mèo', 'cat-dry', 'cat', 'dry'),
+    ('Thức ăn ướt cho mèo', 'cat-wet', 'cat', 'wet');
+
 CREATE TABLE IF NOT EXISTS products (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     sku VARCHAR(64) NOT NULL,
     name VARCHAR(180) NOT NULL,
     species ENUM('dog', 'cat') NOT NULL,
     food_type ENUM('dry', 'wet') NOT NULL,
+    category_id BIGINT UNSIGNED NOT NULL,
     description TEXT NULL,
     image_path VARCHAR(255) NULL,
     price_vnd BIGINT UNSIGNED NOT NULL,
@@ -37,7 +60,38 @@ CREATE TABLE IF NOT EXISTS products (
     PRIMARY KEY (id),
     UNIQUE KEY uq_products_sku (sku),
     KEY idx_products_species_type_active (species, food_type, is_active),
-    KEY idx_products_active_price (is_active, price_vnd)
+    KEY idx_products_active_price (is_active, price_vnd),
+    KEY idx_products_category (category_id),
+    CONSTRAINT fk_products_category FOREIGN KEY (category_id) REFERENCES product_categories (id)
+) ENGINE=InnoDB
+  DEFAULT CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS product_images (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    product_id BIGINT UNSIGNED NOT NULL,
+    image_path VARCHAR(255) NOT NULL,
+    sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_product_images_path (product_id, image_path),
+    KEY idx_product_images_order (product_id, sort_order, id),
+    CONSTRAINT fk_product_images_product FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
+) ENGINE=InnoDB
+  DEFAULT CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS product_variants (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    product_id BIGINT UNSIGNED NOT NULL,
+    sku VARCHAR(64) NOT NULL,
+    name VARCHAR(120) NOT NULL,
+    price_vnd BIGINT UNSIGNED NOT NULL,
+    stock_quantity INT UNSIGNED NOT NULL DEFAULT 0,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_product_variants_sku (sku),
+    KEY idx_product_variants_product_active (product_id, is_active),
+    CONSTRAINT fk_product_variants_product FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
 ) ENGINE=InnoDB
   DEFAULT CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
@@ -72,14 +126,17 @@ CREATE TABLE IF NOT EXISTS order_items (
     product_sku VARCHAR(64) NOT NULL,
     product_name VARCHAR(180) NOT NULL,
     product_image_path VARCHAR(255) NULL,
+    product_variant_id BIGINT UNSIGNED NULL,
     quantity INT UNSIGNED NOT NULL,
     unit_price_vnd BIGINT UNSIGNED NOT NULL,
     subtotal_vnd BIGINT UNSIGNED NOT NULL,
     PRIMARY KEY (id),
     KEY idx_order_items_order (order_id),
     KEY idx_order_items_product (product_id),
+    KEY idx_order_items_variant (product_variant_id),
     CONSTRAINT fk_order_items_order FOREIGN KEY (order_id) REFERENCES orders (id),
-    CONSTRAINT fk_order_items_product FOREIGN KEY (product_id) REFERENCES products (id)
+    CONSTRAINT fk_order_items_product FOREIGN KEY (product_id) REFERENCES products (id),
+    CONSTRAINT fk_order_items_variant FOREIGN KEY (product_variant_id) REFERENCES product_variants (id) ON DELETE SET NULL
 ) ENGINE=InnoDB
   DEFAULT CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;

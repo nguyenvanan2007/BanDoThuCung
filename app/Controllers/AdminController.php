@@ -9,8 +9,11 @@ use App\Core\Database;
 use App\Models\AdminOrderManager;
 use App\Models\AdminProductManager;
 use App\Models\User;
+use App\Services\OrderNotificationMailer;
 use DomainException;
+use PHPMailer\PHPMailer\Exception as MailException;
 use PDOException;
+use RuntimeException;
 
 final class AdminController extends Controller
 {
@@ -43,13 +46,97 @@ final class AdminController extends Controller
         ]);
     }
 
+    public function categories(): void
+    {
+        if (!$this->requireAdmin()) {
+            return;
+        }
+
+        $manager = new AdminProductManager(Database::connection());
+        $this->render('admin/categories', [
+            'title' => 'Quản lý danh mục | TPet',
+            'categories' => $manager->findCategories(true),
+            'errors' => [],
+            'categoryName' => '',
+            'categorySpecies' => 'dog',
+            'categoryFoodType' => 'dry',
+        ]);
+    }
+
+    public function createCategory(): void
+    {
+        if (!$this->requireAdmin()) {
+            return;
+        }
+        if (!$this->hasValidCsrfToken()) {
+            $this->showForbidden();
+            return;
+        }
+
+        $name = $this->postText('name');
+        $species = $this->postText('species');
+        $foodType = $this->postText('food_type');
+        $errors = [];
+        if (mb_strlen($name) < 2 || mb_strlen($name) > 120) {
+            $errors[] = 'Tên danh mục cần có từ 2 đến 120 ký tự.';
+        }
+        if (!in_array($species, ['dog', 'cat'], true) || !in_array($foodType, ['dry', 'wet'], true)) {
+            $errors[] = 'Hãy chọn đúng đối tượng và loại thức ăn.';
+        }
+
+        if ($errors === []) {
+            $slug = $this->categorySlug($species . '-' . $foodType . '-' . $name);
+            try {
+                (new AdminProductManager(Database::connection()))->createCategory($name, $slug, $species, $foodType);
+            } catch (PDOException $exception) {
+                if (($exception->errorInfo[0] ?? (string) $exception->getCode()) !== '23000') {
+                    throw $exception;
+                }
+                $errors[] = 'Danh mục có tên tương tự đã tồn tại cho loại thức ăn này.';
+            }
+        }
+
+        if ($errors !== []) {
+            $this->render('admin/categories', [
+                'title' => 'Quản lý danh mục | TPet',
+                'categories' => (new AdminProductManager(Database::connection()))->findCategories(true),
+                'errors' => $errors,
+                'categoryName' => $name,
+                'categorySpecies' => $species,
+                'categoryFoodType' => $foodType,
+            ]);
+            return;
+        }
+
+        $this->flashSuccess('Đã thêm danh mục.');
+        $this->redirect('/admin/categories');
+    }
+
+    public function toggleCategory(string $categoryId): void
+    {
+        if (!$this->requireAdmin()) {
+            return;
+        }
+        if (!$this->hasValidCsrfToken()) {
+            $this->showForbidden();
+            return;
+        }
+
+        $isActive = $this->postText('is_active') === '1';
+        (new AdminProductManager(Database::connection()))->setCategoryActive($categoryId, $isActive);
+        $this->flashSuccess($isActive ? 'Đã hiển thị danh mục.' : 'Đã ẩn danh mục.');
+        $this->redirect('/admin/categories');
+    }
+
     public function newProduct(): void
     {
         if (!$this->requireAdmin()) {
             return;
         }
 
-        $this->renderProductForm($this->emptyProduct(), [], false);
+        $manager = new AdminProductManager(Database::connection());
+        $categories = $manager->findCategories();
+        $this->renderProductForm($this->emptyProduct($categories), [], false, $categories);
     }
 
     public function createProduct(): void
@@ -61,15 +148,15 @@ final class AdminController extends Controller
             $this->showForbidden();
             return;
         }
-
-        [$data, $errors] = $this->validatedProductData();
+        $manager = new AdminProductManager(Database::connection());
+        [$data, $errors] = $this->validatedProductData($manager);
         if ($errors !== []) {
-            $this->renderProductForm($this->productFormData($data), $errors, false);
+            $this->renderProductForm($this->productFormData($data), $errors, false, $manager->findCategories(true));
             return;
         }
 
         try {
-            (new AdminProductManager(Database::connection()))->create($data);
+            $manager->create($data);
         } catch (PDOException $exception) {
             if (($exception->errorInfo[0] ?? (string) $exception->getCode()) !== '23000') {
                 throw $exception;
@@ -77,8 +164,9 @@ final class AdminController extends Controller
 
             $this->renderProductForm(
                 $this->productFormData($data),
-                ['Mã sản phẩm đã được sử dụng cho sản phẩm khác.'],
-                false
+                ['Mã sản phẩm hoặc SKU biến thể đã được sử dụng.'],
+                false,
+                $manager->findCategories(true)
             );
             return;
         }
@@ -99,7 +187,7 @@ final class AdminController extends Controller
             return;
         }
 
-        $this->renderProductForm($product, [], true);
+        $this->renderProductForm($product, [], true, (new AdminProductManager(Database::connection()))->findCategories(true));
     }
 
     public function updateProduct(string $productId): void
@@ -119,9 +207,9 @@ final class AdminController extends Controller
             return;
         }
 
-        [$data, $errors] = $this->validatedProductData();
+        [$data, $errors] = $this->validatedProductData($manager);
         if ($errors !== []) {
-            $this->renderProductForm($this->productFormData($data, $productId), $errors, true);
+            $this->renderProductForm($this->productFormData($data, $productId), $errors, true, $manager->findCategories(true));
             return;
         }
 
@@ -134,13 +222,42 @@ final class AdminController extends Controller
 
             $this->renderProductForm(
                 $this->productFormData($data, $productId),
-                ['Mã sản phẩm đã được sử dụng cho sản phẩm khác.'],
-                true
+                ['Mã sản phẩm hoặc SKU biến thể đã được sử dụng.'],
+                true,
+                $manager->findCategories(true)
             );
             return;
         }
 
         $this->flashSuccess('Đã lưu thay đổi sản phẩm.');
+        $this->redirect('/admin/products');
+    }
+
+    public function deleteProduct(string $productId): void
+    {
+        if (!$this->requireAdmin()) {
+            return;
+        }
+        if (!$this->hasValidCsrfToken()) {
+            $this->showForbidden();
+            return;
+        }
+        if ($this->postText('confirm_delete') !== '1') {
+            $this->flashError('Vui lòng xác nhận trước khi xóa sản phẩm.');
+            $this->redirect('/admin/products/' . rawurlencode($productId));
+        }
+
+        $manager = new AdminProductManager(Database::connection());
+        if ($manager->findById($productId) === null) {
+            (new NotFoundController())->show();
+            return;
+        }
+        if (!$manager->delete($productId)) {
+            $this->flashError('Sản phẩm đã có trong đơn hàng nên không thể xóa. Hãy ẩn sản phẩm để giữ lịch sử đơn.');
+            $this->redirect('/admin/products/' . rawurlencode($productId));
+        }
+
+        $this->flashSuccess('Đã xóa sản phẩm.');
         $this->redirect('/admin/products');
     }
 
@@ -187,15 +304,35 @@ final class AdminController extends Controller
         }
 
         $nextStatus = $this->postText('status');
-        $userId = $_SESSION['user']['id'];
+        $userId = (string) $_SESSION['user']['id'];
+        $manager = new AdminOrderManager(Database::connection());
         try {
-            (new AdminOrderManager(Database::connection()))->updateStatus($orderId, $nextStatus, $userId);
+            $changed = $manager->updateStatus($orderId, $nextStatus, $userId);
         } catch (DomainException $exception) {
             $this->flashError($exception->getMessage());
             $this->redirect('/admin/orders/' . rawurlencode($orderId));
         }
 
-        $this->flashSuccess('Đã cập nhật trạng thái đơn hàng.');
+        if (!$changed) {
+            $this->flashSuccess('Đơn hàng đã ở trạng thái này.');
+            $this->redirect('/admin/orders/' . rawurlencode($orderId));
+        }
+
+        try {
+            $order = $manager->findById($orderId);
+            if ($order === null) {
+                throw new RuntimeException('Không thể tải đơn hàng vừa cập nhật để gửi email.');
+            }
+            (new OrderNotificationMailer())->sendStatusUpdate($order);
+            $this->flashSuccess('Đã cập nhật trạng thái đơn hàng và gửi email thông báo cho khách.');
+        } catch (MailException | RuntimeException | PDOException $exception) {
+            error_log(sprintf(
+                'Order status email failed for order %s (%s).',
+                $orderId,
+                get_class($exception)
+            ));
+            $this->flashError('Trạng thái đơn đã được cập nhật nhưng email thông báo chưa gửi được. Vui lòng kiểm tra cấu hình email.');
+        }
         $this->redirect('/admin/orders/' . rawurlencode($orderId));
     }
 
@@ -222,19 +359,29 @@ final class AdminController extends Controller
         return true;
     }
 
-    private function validatedProductData(): array
+    private function validatedProductData(AdminProductManager $manager): array
     {
         $sku = $this->postText('sku');
         $name = $this->postText('name');
-        $species = $this->postText('species');
-        $foodType = $this->postText('food_type');
+        $categoryId = $this->postText('category_id');
         $description = $this->postText('description');
-        $imagePath = $this->postText('image_path');
         $price = $this->postInteger('price_vnd');
         $stock = $this->postInteger('stock_quantity');
         $isActive = $this->postText('is_active') === '1' ? 1 : 0;
         $availableImages = $this->availableProductImages();
+        $submittedImages = $_POST['images'] ?? [];
+        $images = is_array($submittedImages)
+            ? array_values(array_unique(array_filter($submittedImages, 'is_string')))
+            : [];
         $errors = [];
+        $categories = $manager->findCategories(true);
+        $category = null;
+        foreach ($categories as $candidate) {
+            if ((string) $candidate['id'] === $categoryId) {
+                $category = $candidate;
+                break;
+            }
+        }
 
         if (preg_match('/\A[A-Za-z0-9_-]{1,64}\z/', $sku) !== 1) {
             $errors[] = 'Mã sản phẩm chỉ được gồm chữ, số, dấu gạch ngang hoặc gạch dưới (tối đa 64 ký tự).';
@@ -242,11 +389,8 @@ final class AdminController extends Controller
         if (mb_strlen($name) < 2 || mb_strlen($name) > 180) {
             $errors[] = 'Tên sản phẩm cần có từ 2 đến 180 ký tự.';
         }
-        if (!in_array($species, ['dog', 'cat'], true)) {
-            $errors[] = 'Hãy chọn sản phẩm dành cho chó hoặc mèo.';
-        }
-        if (!in_array($foodType, ['dry', 'wet'], true)) {
-            $errors[] = 'Hãy chọn loại thức ăn khô hoặc ướt.';
+        if ($category === null || !(bool) $category['isActive']) {
+            $errors[] = 'Hãy chọn một danh mục đang hoạt động.';
         }
         if (mb_strlen($description) > 5000) {
             $errors[] = 'Mô tả không được dài quá 5.000 ký tự.';
@@ -257,25 +401,73 @@ final class AdminController extends Controller
         if ($stock === null || $stock < 0 || $stock > 1000000000) {
             $errors[] = 'Tồn kho phải là số nguyên từ 0 đến 1.000.000.000.';
         }
-        if ($imagePath !== ''
-            && (!in_array($imagePath, $availableImages, true) || safe_product_image_path($imagePath) === null)) {
-            $errors[] = 'Ảnh phải được chọn từ các file có sẵn trong thư mục ảnh sản phẩm.';
+        if (count($images) > 10
+            || array_diff($images, $availableImages) !== []
+            || array_filter($images, static fn (string $image): bool => safe_product_image_path($image) === null) !== []) {
+            $errors[] = 'Chỉ được chọn tối đa 10 ảnh có sẵn trong thư mục ảnh sản phẩm.';
+        }
+
+        $submittedVariants = $_POST['variants'] ?? [];
+        $variants = [];
+        $variantSkus = [];
+        if (!is_array($submittedVariants) || count($submittedVariants) > 20) {
+            $errors[] = 'Sản phẩm được có tối đa 20 biến thể.';
+            $submittedVariants = [];
+        }
+        foreach ($submittedVariants as $variantRow) {
+            if (!is_array($variantRow)) {
+                $errors[] = 'Thông tin biến thể không hợp lệ.';
+                continue;
+            }
+
+            $variant = [
+                'id' => is_string($variantRow['id'] ?? null) ? trim($variantRow['id']) : '',
+                'sku' => is_string($variantRow['sku'] ?? null) ? trim($variantRow['sku']) : '',
+                'name' => is_string($variantRow['name'] ?? null) ? trim($variantRow['name']) : '',
+                'price_vnd' => $this->integerValue($variantRow['price_vnd'] ?? null),
+                'stock_quantity' => $this->integerValue($variantRow['stock_quantity'] ?? null),
+            ];
+            if ($variant['sku'] === '' && $variant['name'] === ''
+                && $variant['price_vnd'] === null && $variant['stock_quantity'] === null) {
+                continue;
+            }
+            if (preg_match('/\A[A-Za-z0-9_-]{1,64}\z/', $variant['sku']) !== 1) {
+                $errors[] = 'Mã SKU của mỗi biến thể cần từ 1 đến 64 ký tự hợp lệ.';
+            }
+            if (mb_strlen($variant['name']) < 1 || mb_strlen($variant['name']) > 120) {
+                $errors[] = 'Tên biến thể cần có từ 1 đến 120 ký tự.';
+            }
+            if ($variant['price_vnd'] === null || $variant['price_vnd'] < 1) {
+                $errors[] = 'Giá của biến thể phải là số nguyên lớn hơn 0.';
+            }
+            if ($variant['stock_quantity'] === null
+                || $variant['stock_quantity'] < 0 || $variant['stock_quantity'] > 1000000000) {
+                $errors[] = 'Tồn kho biến thể phải là số nguyên từ 0 đến 1.000.000.000.';
+            }
+            if (isset($variantSkus[strtolower($variant['sku'])])) {
+                $errors[] = 'SKU của các biến thể phải khác nhau.';
+            }
+            $variantSkus[strtolower($variant['sku'])] = true;
+            $variants[] = $variant;
         }
 
         return [[
             'sku' => $sku,
             'name' => $name,
-            'species' => $species,
-            'food_type' => $foodType,
+            'species' => (string) ($category['species'] ?? ''),
+            'food_type' => (string) ($category['foodType'] ?? ''),
+            'category_id' => $categoryId,
             'description' => $description,
-            'image_path' => $imagePath === '' ? null : $imagePath,
+            'image_path' => $images[0] ?? null,
+            'images' => $images,
             'price_vnd' => $price ?? 0,
             'stock_quantity' => $stock ?? 0,
             'is_active' => $isActive,
+            'variants' => $variants,
         ], $errors];
     }
 
-    private function renderProductForm(array $product, array $errors, bool $isEditing): void
+    private function renderProductForm(array $product, array $errors, bool $isEditing, array $categories): void
     {
         $this->render('admin/product-form', [
             'title' => ($isEditing ? 'Sửa sản phẩm' : 'Thêm sản phẩm') . ' | Quản trị TPet',
@@ -283,19 +475,21 @@ final class AdminController extends Controller
             'errors' => $errors,
             'isEditing' => $isEditing,
             'images' => $this->availableProductImages(),
+            'categories' => $categories,
         ]);
     }
 
-    private function emptyProduct(): array
+    private function emptyProduct(array $categories): array
     {
         return [
             'id' => '',
             'sku' => '',
             'name' => '',
-            'species' => 'dog',
-            'foodType' => 'dry',
+            'categoryId' => (string) ($categories[0]['id'] ?? ''),
             'description' => '',
             'imagePath' => null,
+            'images' => [],
+            'variants' => [],
             'priceVnd' => '',
             'stockQuantity' => 0,
             'isActive' => true,
@@ -308,14 +502,49 @@ final class AdminController extends Controller
             'id' => $id,
             'sku' => $data['sku'],
             'name' => $data['name'],
-            'species' => $data['species'],
-            'foodType' => $data['food_type'],
+            'categoryId' => $data['category_id'],
             'description' => $data['description'],
             'imagePath' => $data['image_path'],
+            'images' => $data['images'],
+            'variants' => array_map(
+                static fn (array $variant): array => [
+                    'id' => $variant['id'],
+                    'sku' => $variant['sku'],
+                    'name' => $variant['name'],
+                    'priceVnd' => $variant['price_vnd'],
+                    'stockQuantity' => $variant['stock_quantity'],
+                    'isActive' => true,
+                ],
+                $data['variants']
+            ),
             'priceVnd' => $data['price_vnd'],
             'stockQuantity' => $data['stock_quantity'],
             'isActive' => (bool) $data['is_active'],
         ];
+    }
+
+    private function categorySlug(string $value): string
+    {
+        $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value);
+        $slug = strtolower(is_string($ascii) ? $ascii : $value);
+        $slug = preg_replace('/[^a-z0-9]+/', '-', $slug) ?? '';
+        $slug = trim($slug, '-');
+
+        return substr($slug, 0, 140);
+    }
+
+    private function integerValue(mixed $value): ?int
+    {
+        if (!is_string($value) && !is_int($value)) {
+            return null;
+        }
+        if (preg_match('/\A[0-9]+\z/', (string) $value) !== 1) {
+            return null;
+        }
+
+        $integer = filter_var((string) $value, FILTER_VALIDATE_INT);
+
+        return $integer === false ? null : $integer;
     }
 
     private function availableProductImages(): array

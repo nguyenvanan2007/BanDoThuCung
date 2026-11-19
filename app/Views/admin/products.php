@@ -4,7 +4,10 @@
         <h1>Quản lý sản phẩm</h1>
         <p class="page-description">Ảnh được chọn từ các file trong thư mục ảnh sản phẩm của dự án.</p>
     </div>
-    <a class="button" href="/admin/products/new">Thêm sản phẩm</a>
+    <div class="admin-page-actions">
+        <a class="button secondary-button" href="/admin/categories">Quản lý danh mục</a>
+        <a class="button" href="/admin/products/new">Thêm sản phẩm</a>
+    </div>
 </section>
 
 <section class="admin-content-card">
@@ -21,7 +24,8 @@
                     <tr>
                         <th>Ảnh</th>
                         <th>Sản phẩm</th>
-                        <th>Loại</th>
+                        <th>Danh mục</th>
+                        <th>Ảnh / biến thể</th>
                         <th>Giá</th>
                         <th>Tồn kho</th>
                         <th>Trạng thái</th>
@@ -43,6 +47,7 @@
                                 <small><?= e($product['sku']) ?> · <?= e($product['speciesLabel']) ?></small>
                             </td>
                             <td><?= e($product['foodTypeLabel']) ?></td>
+                            <td><?= e($product['imageCount']) ?> ảnh · <?= e($product['variantCount']) ?> biến thể</td>
                             <td><?= e(format_vnd($product['priceVnd'])) ?></td>
                             <td><?= e($product['stockQuantity']) ?></td>
                             <td><?= $product['isActive'] ? 'Đang bán' : 'Đã ẩn' ?></td>

@@ -54,11 +54,14 @@
             <option value="cat" <?= $filters['species'] === 'cat' ? 'selected' : '' ?>>Mèo</option>
         </select>
 
-        <label for="category">Loại thức ăn</label>
+        <label for="category">Danh mục</label>
         <select id="category" name="category">
             <option value="">Tất cả loại</option>
-            <option value="dry" <?= $filters['category'] === 'dry' ? 'selected' : '' ?>>Thức ăn khô</option>
-            <option value="wet" <?= $filters['category'] === 'wet' ? 'selected' : '' ?>>Thức ăn ướt</option>
+            <?php foreach ($categories as $category): ?>
+                <option value="<?= e($category['slug']) ?>" <?= $filters['category'] === $category['slug'] ? 'selected' : '' ?>>
+                    <?= e($category['name']) ?>
+                </option>
+            <?php endforeach; ?>
         </select>
 
         <label for="price"><?= $isDemoMode ? 'Khoảng giá minh họa' : 'Khoảng giá' ?></label>
@@ -117,18 +120,23 @@
                                 <?php endif; ?>
                                 <h2><?= e($product['name']) ?></h2>
                                 <div class="product-card-footer">
-                                    <strong><?= $product['isDemo'] ? 'Giá mẫu: ' : 'Giá: ' ?><?= e(format_vnd($product['price'])) ?></strong>
+                                    <strong>
+                                        <?= $product['isDemo'] ? 'Giá mẫu: ' : ($product['hasVariants'] ? 'Giá từ: ' : 'Giá: ') ?>
+                                        <?= e(format_vnd($product['price'])) ?>
+                                    </strong>
                                     <span>Xem chi tiết&nbsp;→</span>
                                 </div>
                             </div>
                         </a>
-                        <?php if (!$product['isDemo'] && $product['stockQuantity'] > 0): ?>
+                        <?php if (!$product['isDemo'] && $product['stockQuantity'] > 0 && !$product['hasVariants']): ?>
                             <form class="product-buy-form" method="post" action="/cart/add">
                                 <input type="hidden" name="_csrf_token" value="<?= e(csrf_token()) ?>">
                                 <input type="hidden" name="product_id" value="<?= e($product['id']) ?>">
                                 <input type="hidden" name="quantity" value="1">
                                 <button class="button product-buy-button" type="submit">Thêm vào giỏ</button>
                             </form>
+                        <?php elseif (!$product['isDemo'] && $product['stockQuantity'] > 0 && $product['hasVariants']): ?>
+                            <a class="button product-buy-button" href="/products/<?= e($product['id']) ?>">Chọn quy cách</a>
                         <?php elseif (!$product['isDemo']): ?>
                             <button class="button product-buy-button" type="button" disabled>Hết hàng</button>
                         <?php endif; ?>

@@ -44,13 +44,17 @@
             <h2>Tóm tắt đơn hàng</h2>
             <?php foreach ($items as $item): ?>
                 <div class="checkout-line">
-                    <span><?= e($item['product']['name']) ?> × <?= e($item['quantity']) ?></span>
+                    <span>
+                        <?= e($item['product']['name']) ?>
+                        <?= $item['variant'] !== null ? ' · ' . e($item['variant']['name']) : '' ?>
+                        × <?= e($item['quantity']) ?>
+                    </span>
                     <strong><?= e(format_vnd($item['subtotal'])) ?></strong>
                 </div>
             <?php endforeach; ?>
             <div class="checkout-line">
                 <span>Tạm tính</span>
-                <strong><?= e(format_vnd($subtotal)) ?></strong>
+                <strong><?= $total === null ? 'Chưa thể xác định' : e(format_vnd($subtotal)) ?></strong>
             </div>
             <div class="checkout-line">
                 <span>Phí giao hàng</span>
@@ -58,7 +62,7 @@
             </div>
             <div class="checkout-total">
                 <span>Tổng cộng</span>
-                <strong><?= e(format_vnd($subtotal + $shippingFee)) ?></strong>
+                <strong><?= $total === null ? 'Xử lý lỗi để tính tổng' : e(format_vnd($total)) ?></strong>
             </div>
         </aside>
     <?php endif; ?>

@@ -111,7 +111,8 @@ final class DemoProductCatalog implements ProductCatalogInterface
                 return false;
             }
 
-            if ($filters['category'] !== '' && $product['category'] !== $filters['category']) {
+            if ($filters['category'] !== ''
+                && $filters['category'] !== $product['species'] . '-' . $product['category']) {
                 return false;
             }
 
@@ -126,18 +127,42 @@ final class DemoProductCatalog implements ProductCatalogInterface
             };
         });
 
-        return array_values($products);
+        return array_map(
+            static fn (array $product): array => $product + ['hasVariants' => false],
+            array_values($products)
+        );
     }
 
     public function findById(string $id): ?array
     {
         foreach (self::PRODUCTS as $product) {
             if ($product['id'] === $id) {
-                return $product;
+                return $product + [
+                    'categoryId' => '',
+                    'categorySlug' => $product['species'] . '-' . $product['category'],
+                    'images' => [$product['imagePath']],
+                    'variants' => [],
+                    'hasVariants' => false,
+                ];
             }
         }
 
         return null;
+    }
+
+    public function findVariant(string $productId, string $variantId): ?array
+    {
+        return null;
+    }
+
+    public function categories(): array
+    {
+        return [
+            ['id' => '', 'name' => 'Thức ăn khô cho chó', 'slug' => 'dog-dry', 'species' => 'dog', 'foodType' => 'dry'],
+            ['id' => '', 'name' => 'Thức ăn ướt cho chó', 'slug' => 'dog-wet', 'species' => 'dog', 'foodType' => 'wet'],
+            ['id' => '', 'name' => 'Thức ăn khô cho mèo', 'slug' => 'cat-dry', 'species' => 'cat', 'foodType' => 'dry'],
+            ['id' => '', 'name' => 'Thức ăn ướt cho mèo', 'slug' => 'cat-wet', 'species' => 'cat', 'foodType' => 'wet'],
+        ];
     }
 
     public function isDemoMode(): bool

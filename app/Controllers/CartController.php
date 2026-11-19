@@ -18,13 +18,22 @@ final class CartController extends Controller
         $cart = $this->cartItems();
         $items = [];
         $total = 0;
+        $cartErrors = [];
         $hasDemoItems = false;
 
-        foreach ($cart as $productId => $quantity) {
+        foreach ($cart as $cartKey => $quantity) {
+            $parts = $this->parseCartKey((string) $cartKey);
+            if ($parts === null) {
+                continue;
+            }
+            [$productId, $variantId] = $parts;
             $product = $this->catalog->findById((string) $productId);
             if ($product === null) {
+                $cartErrors[] = 'Một sản phẩm trong giỏ không còn bán; hãy xóa sản phẩm đó trước khi thanh toán.';
                 $items[] = [
-                    'id' => (string) $productId,
+                    'id' => (string) $cartKey,
+                    'productId' => (string) $productId,
+                    'variant' => null,
                     'quantity' => $quantity,
                     'product' => null,
                     'subtotal' => 0,
@@ -32,13 +41,45 @@ final class CartController extends Controller
                 continue;
             }
 
-            $subtotal = $product['price'] * $quantity;
-            $total += $subtotal;
+            $variant = $variantId === null ? null : $this->catalog->findVariant((string) $productId, $variantId);
+            if (($product['variants'] !== [] && $variant === null) || ($variantId !== null && $variant === null)) {
+                $cartErrors[] = 'Một biến thể trong giỏ không còn bán; hãy xóa sản phẩm đó trước khi thanh toán.';
+                $items[] = [
+                    'id' => (string) $cartKey,
+                    'productId' => (string) $productId,
+                    'variant' => null,
+                    'quantity' => $quantity,
+                    'product' => null,
+                    'subtotal' => 0,
+                ];
+                continue;
+            }
+            $price = $variant['price'] ?? $product['price'];
+            $stockQuantity = $variant['stockQuantity'] ?? $product['stockQuantity'];
+            if ($quantity > $stockQuantity) {
+                $cartErrors[] = sprintf('Sản phẩm "%s" không đủ tồn kho; hãy giảm số lượng.', $product['name']);
+            }
+
+            $subtotal = null;
+            if ($price <= intdiv(PHP_INT_MAX, $quantity)) {
+                $subtotal = $price * $quantity;
+                if ($total !== null && $total <= PHP_INT_MAX - $subtotal) {
+                    $total += $subtotal;
+                } else {
+                    $total = null;
+                }
+            } else {
+                $total = null;
+            }
             $hasDemoItems = $hasDemoItems || $product['isDemo'];
             $items[] = [
-                'id' => (string) $productId,
+                'id' => (string) $cartKey,
+                'productId' => (string) $productId,
+                'variant' => $variant,
                 'quantity' => $quantity,
                 'product' => $product,
+                'price' => $price,
+                'stockQuantity' => $stockQuantity,
                 'subtotal' => $subtotal,
             ];
         }
@@ -47,6 +88,7 @@ final class CartController extends Controller
             'title' => 'Giỏ hàng | TPet',
             'items' => $items,
             'total' => $total,
+            'cartErrors' => array_values(array_unique($cartErrors)),
             'hasDemoItems' => $hasDemoItems,
             'catalogDemoMode' => $this->catalog->isDemoMode(),
         ]);
@@ -60,6 +102,7 @@ final class CartController extends Controller
         }
 
         $productId = $this->postInteger('product_id');
+        $variantId = $this->postInteger('variant_id');
         $quantity = $this->postInteger('quantity');
         $product = $productId === null ? null : $this->catalog->findById((string) $productId);
 
@@ -68,18 +111,28 @@ final class CartController extends Controller
             $this->redirect('/');
         }
 
+        $variant = $variantId === null
+            ? null
+            : $this->catalog->findVariant((string) $productId, (string) $variantId);
+        if (($product['variants'] !== [] && $variant === null) || ($variantId !== null && $variant === null)) {
+            $this->flashError('Vui lòng chọn một biến thể đang được bán.');
+            $this->redirect('/products/' . $productId);
+        }
+
+        $cartKey = $this->makeCartKey((string) $productId, $variantId === null ? null : (string) $variantId);
+        $stockQuantity = $variant['stockQuantity'] ?? $product['stockQuantity'];
         $currentCart = $this->cartItems();
-        $currentQuantity = $currentCart[(string) $productId] ?? 0;
+        $currentQuantity = $currentCart[$cartKey] ?? 0;
         $requestedQuantity = $quantity ?? 0;
 
         if ($requestedQuantity < 1
-            || $product['stockQuantity'] < 1
-            || $requestedQuantity > $product['stockQuantity'] - $currentQuantity) {
+            || $stockQuantity < 1
+            || $requestedQuantity > $stockQuantity - $currentQuantity) {
             $this->flashError('Số lượng yêu cầu vượt quá tồn kho hiện có.');
             $this->redirect('/products/' . $productId);
         }
 
-        $currentCart[(string) $productId] = $currentQuantity + $requestedQuantity;
+        $currentCart[$cartKey] = $currentQuantity + $requestedQuantity;
         $_SESSION['cart_items'] = $currentCart;
         $_SESSION['_flash'] = [
             'type' => 'success',
@@ -95,24 +148,29 @@ final class CartController extends Controller
             return;
         }
 
-        $productId = $this->postInteger('product_id');
+        $cartKey = $this->postCartKey();
         $quantity = $this->postInteger('quantity');
         $cart = $this->cartItems();
-        $key = $productId === null ? '' : (string) $productId;
 
-        if ($key === '' || !array_key_exists($key, $cart)) {
+        if ($cartKey === null || !array_key_exists($cartKey, $cart)) {
             $this->flashError('Sản phẩm không có trong giỏ hàng.');
             $this->redirect('/cart');
         }
 
-        $product = $this->catalog->findById($key);
-        if ($product === null || $quantity === null
-            || $quantity < 1 || $quantity > $product['stockQuantity']) {
+        $parts = $this->parseCartKey($cartKey);
+        $product = $parts === null ? null : $this->catalog->findById($parts[0]);
+        $variant = $parts === null || $parts[1] === null
+            ? null
+            : $this->catalog->findVariant($parts[0], $parts[1]);
+        $stockQuantity = $variant['stockQuantity'] ?? $product['stockQuantity'] ?? 0;
+        if ($product === null || ($parts[1] !== null && $variant === null)
+            || ($product['variants'] !== [] && $variant === null)
+            || $quantity === null || $quantity < 1 || $quantity > $stockQuantity) {
             $this->flashError('Số lượng không hợp lệ hoặc vượt quá tồn kho hiện có.');
             $this->redirect('/cart');
         }
 
-        $cart[$key] = $quantity;
+        $cart[$cartKey] = $quantity;
         $_SESSION['cart_items'] = $cart;
         $_SESSION['_flash'] = [
             'type' => 'success',
@@ -128,11 +186,10 @@ final class CartController extends Controller
             return;
         }
 
-        $productId = $this->postInteger('product_id');
-        $key = $productId === null ? '' : (string) $productId;
+        $key = $this->postCartKey();
         $cart = $this->cartItems();
 
-        if ($key === '' || !array_key_exists($key, $cart)) {
+        if ($key === null || !array_key_exists($key, $cart)) {
             $this->flashError('Sản phẩm không có trong giỏ hàng.');
             $this->redirect('/cart');
         }
@@ -155,16 +212,36 @@ final class CartController extends Controller
 
         $validItems = [];
         foreach ($items as $productId => $quantity) {
-            $productId = (string) $productId;
-            if (ctype_digit($productId)
-                && (int) $productId > 0
+            $cartKey = (string) $productId;
+            if ($this->parseCartKey($cartKey) !== null
                 && is_int($quantity)
                 && $quantity > 0) {
-                $validItems[$productId] = $quantity;
+                $validItems[$cartKey] = $quantity;
             }
         }
 
         return $validItems;
+    }
+
+    private function makeCartKey(string $productId, ?string $variantId): string
+    {
+        return $variantId === null ? $productId : $productId . ':v' . $variantId;
+    }
+
+    private function parseCartKey(string $cartKey): ?array
+    {
+        if (preg_match('/\A([1-9][0-9]*)(?::v([1-9][0-9]*))?\z/', $cartKey, $matches) !== 1) {
+            return null;
+        }
+
+        return [$matches[1], isset($matches[2]) ? $matches[2] : null];
+    }
+
+    private function postCartKey(): ?string
+    {
+        $value = $_POST['cart_key'] ?? null;
+
+        return is_string($value) && $this->parseCartKey($value) !== null ? $value : null;
     }
 
     private function postInteger(string $key): ?int
