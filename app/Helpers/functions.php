@@ -49,6 +49,28 @@ function order_status_label(string $status): string
     };
 }
 
+function payment_status_label(string $status): string
+{
+    return match ($status) {
+        'unpaid' => 'Chưa ghi nhận thanh toán',
+        'pending' => 'Chờ thanh toán',
+        'paid' => 'Đã thanh toán',
+        'failed' => 'Thanh toán thất bại',
+        'refunded' => 'Đã hoàn tiền',
+        'cancelled' => 'Đã hủy thanh toán',
+        default => 'Không xác định',
+    };
+}
+
+function payment_method_label(string $method): string
+{
+    return match ($method) {
+        'cod' => 'Tiền mặt khi nhận hàng (COD)',
+        'vnpay' => 'VNPAY',
+        default => 'Không xác định',
+    };
+}
+
 function safe_product_image_path(mixed $path): ?string
 {
     if (!is_string($path)

@@ -20,6 +20,7 @@
                         <th>Ngày đặt</th>
                         <th>Sản phẩm</th>
                         <th>Trạng thái</th>
+                        <th>Thanh toán</th>
                         <th>Tổng tiền</th>
                         <th></th>
                     </tr>
@@ -35,6 +36,7 @@
                                     <?= e(order_status_label((string) $order['status'])) ?>
                                 </span>
                             </td>
+                            <td><?= e(payment_status_label((string) $order['payment_status'])) ?></td>
                             <td><?= e(format_vnd((int) $order['total_vnd'])) ?></td>
                             <td><a href="/orders/<?= e($order['id']) ?>">Chi tiết</a></td>
                         </tr>

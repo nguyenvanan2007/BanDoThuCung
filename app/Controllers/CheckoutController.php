@@ -6,9 +6,12 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Core\Database;
+use App\Models\CouponManager;
 use App\Models\Order;
+use App\Models\PaymentManager;
 use App\Models\ProductCatalogInterface;
 use App\Services\OrderNotificationMailer;
+use App\Services\VnpayGateway;
 use DomainException;
 use PHPMailer\PHPMailer\Exception as MailException;
 use PDOException;
@@ -26,7 +29,8 @@ final class CheckoutController extends Controller
             return;
         }
 
-        $checkout = $this->checkoutItems();
+        $couponCode = $this->queryText('coupon_code');
+        $checkout = $this->checkoutItems($couponCode);
         if ($this->cartQuantities() === []) {
             $_SESSION['_flash'] = [
                 'type' => 'error',
@@ -41,11 +45,14 @@ final class CheckoutController extends Controller
             'subtotal' => $checkout['subtotal'],
             'shippingFee' => $checkout['shippingFee'],
             'total' => $checkout['total'],
+            'discount' => $checkout['discount'],
+            'couponCode' => $couponCode,
             'errors' => $checkout['errors'],
             'recipientName' => (string) ($_SESSION['user']['name'] ?? ''),
             'phone' => '',
             'address' => '',
             'isDemoMode' => $this->catalog->isDemoMode(),
+            'paymentMethod' => 'cod',
         ]);
     }
 
@@ -67,12 +74,27 @@ final class CheckoutController extends Controller
         $recipientName = trim($this->postText('recipient_name'));
         $phone = trim($this->postText('phone'));
         $address = trim($this->postText('address'));
+        $paymentMethod = $this->postText('payment_method');
+        $paymentMethod = in_array($paymentMethod, ['cod', 'vnpay'], true) ? $paymentMethod : '';
+        $couponCode = strtoupper(trim($this->postText('coupon_code')));
         $errors = $this->validateShippingDetails($recipientName, $phone, $address);
-        $checkout = $this->checkoutItems();
+        $checkout = $this->checkoutItems($couponCode);
         $errors = array_merge($errors, $checkout['errors']);
 
+        if ($paymentMethod === '') {
+            $errors[] = 'Vui lòng chọn phương thức thanh toán hợp lệ.';
+        }
         if ($this->catalog->isDemoMode()) {
             $errors[] = 'Chế độ dữ liệu minh họa không thể tạo đơn hàng thật.';
+        }
+
+        $gateway = new VnpayGateway();
+        if ($paymentMethod === 'vnpay') {
+            try {
+                $gateway->assertConfigured();
+            } catch (RuntimeException $exception) {
+                $errors[] = 'Thanh toán VNPAY chưa sẵn sàng: ' . $exception->getMessage();
+            }
         }
 
         if ($errors !== []) {
@@ -82,15 +104,21 @@ final class CheckoutController extends Controller
                 'subtotal' => $checkout['subtotal'],
                 'shippingFee' => $checkout['shippingFee'],
                 'total' => $checkout['total'],
+                'discount' => $checkout['discount'],
+                'couponCode' => $couponCode,
                 'errors' => $errors,
                 'recipientName' => $recipientName,
                 'phone' => $phone,
                 'address' => $address,
                 'isDemoMode' => $this->catalog->isDemoMode(),
+                'paymentMethod' => $paymentMethod === '' ? 'cod' : $paymentMethod,
             ]);
             return;
         }
 
+        $paymentReference = $paymentMethod === 'vnpay'
+            ? VnpayGateway::newTransactionReference()
+            : null;
         try {
             $orderModel = new Order(Database::connection());
             $userId = (string) $_SESSION['user']['id'];
@@ -100,10 +128,13 @@ final class CheckoutController extends Controller
                 $recipientName,
                 $phone,
                 $address,
-                $checkout['shippingFee']
+                $checkout['shippingFee'],
+                $paymentMethod,
+                $couponCode === '' ? null : $couponCode,
+                $paymentReference
             );
         } catch (DomainException $exception) {
-            $checkout = $this->checkoutItems();
+            $checkout = $this->checkoutItems($couponCode);
             $checkout['errors'][] = $exception->getMessage();
             $this->render('checkout/index', [
                 'title' => 'Thanh toán COD | TPet',
@@ -111,16 +142,52 @@ final class CheckoutController extends Controller
                 'subtotal' => $checkout['subtotal'],
                 'shippingFee' => $checkout['shippingFee'],
                 'total' => null,
+                'discount' => $checkout['discount'],
+                'couponCode' => $couponCode,
                 'errors' => array_values(array_unique($checkout['errors'])),
                 'recipientName' => $recipientName,
                 'phone' => $phone,
                 'address' => $address,
                 'isDemoMode' => $this->catalog->isDemoMode(),
+                'paymentMethod' => $paymentMethod,
             ]);
             return;
         }
 
         $_SESSION['cart_items'] = [];
+        if ($paymentMethod === 'vnpay' && $paymentReference !== null) {
+            $paymentManager = new PaymentManager(Database::connection(), $gateway);
+            $paymentRequest = $paymentManager->findRequestForCustomer(
+                $paymentReference,
+                (string) $_SESSION['user']['id']
+            );
+            $orderModel = new Order(Database::connection());
+            $order = $orderModel->findForCustomer((string) $_SESSION['user']['id'], $orderId);
+            if ($paymentRequest === null || $order === null) {
+                throw new RuntimeException('Không thể tải thông tin thanh toán VNPAY vừa tạo.');
+            }
+            $paymentUrl = $gateway->createPaymentUrl(
+                $paymentReference,
+                (string) $paymentRequest['order_number'],
+                (int) $paymentRequest['amount_vnd'],
+                (string) ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1')
+            );
+            try {
+                (new OrderNotificationMailer())->sendOrderConfirmation($order);
+            } catch (MailException | RuntimeException | PDOException $exception) {
+                error_log(sprintf(
+                    'Order confirmation email failed for order %s (%s).',
+                    $orderId,
+                    get_class($exception)
+                ));
+                $_SESSION['_flash'] = [
+                    'type' => 'error',
+                    'message' => 'Đơn hàng đã được tạo nhưng email xác nhận chưa gửi được.',
+                ];
+            }
+            $this->redirect($paymentUrl);
+        }
+
         try {
             $order = $orderModel->findForCustomer($userId, $orderId);
             if ($order === null) {
@@ -159,7 +226,7 @@ final class CheckoutController extends Controller
         $this->redirect('/login');
     }
 
-    private function checkoutItems(): array
+    private function checkoutItems(string $couponCode = ''): array
     {
         $items = [];
         $errors = [];
@@ -216,17 +283,23 @@ final class CheckoutController extends Controller
         }
 
         $shippingFee = $this->shippingFee();
+        $couponQuote = (new CouponManager(Database::connection()))->quote($couponCode, $subtotal);
+        if ($couponQuote['error'] !== null) {
+            $errors[] = $couponQuote['error'];
+        }
+        $discount = (int) $couponQuote['discount'];
         $total = null;
         if ($subtotal > PHP_INT_MAX - $shippingFee) {
             $errors[] = 'Tổng tiền sau phí giao hàng vượt quá giới hạn.';
         } elseif ($errors === []) {
-            $total = $subtotal + $shippingFee;
+            $total = $subtotal + $shippingFee - $discount;
         }
 
         return [
             'items' => $items,
             'subtotal' => $subtotal,
             'shippingFee' => $shippingFee,
+            'discount' => $discount,
             'total' => $total,
             'errors' => array_values(array_unique($errors)),
         ];
@@ -299,5 +372,12 @@ final class CheckoutController extends Controller
         $value = $_POST[$key] ?? '';
 
         return is_string($value) ? $value : '';
+    }
+
+    private function queryText(string $key): string
+    {
+        $value = $_GET[$key] ?? '';
+
+        return is_string($value) ? mb_substr(trim($value), 0, 40) : '';
     }
 }

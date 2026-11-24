@@ -9,6 +9,7 @@ use App\Controllers\AdminController;
 use App\Controllers\CartController;
 use App\Controllers\CheckoutController;
 use App\Controllers\OrderController;
+use App\Controllers\PaymentController;
 use App\Controllers\ServiceUnavailableController;
 use App\Models\ProductCatalogFactory;
 
@@ -161,6 +162,26 @@ try {
         exit;
     }
 
+    if (preg_match('~\A/admin/orders/([1-9][0-9]*)/cod-paid\z~', $route, $matches) === 1) {
+        if ($method === 'POST') {
+            (new AdminController())->recordCodPayment($matches[1]);
+            exit;
+        }
+        http_response_code(405);
+        header('Allow: POST');
+        exit;
+    }
+
+    if (preg_match('~\A/admin/orders/([1-9][0-9]*)/refund\z~', $route, $matches) === 1) {
+        if ($method === 'POST') {
+            (new AdminController())->recordRefund($matches[1]);
+            exit;
+        }
+        http_response_code(405);
+        header('Allow: POST');
+        exit;
+    }
+
     if (preg_match('~\A/admin/orders/([1-9][0-9]*)/status\z~', $route, $matches) === 1) {
         if ($method === 'POST') {
             (new AdminController())->updateOrderStatus($matches[1]);
@@ -183,8 +204,68 @@ try {
         exit;
     }
 
+    if ($route === '/admin/inventory') {
+        $adminController = new AdminController();
+        if ($method === 'GET') {
+            $adminController->inventory();
+            exit;
+        }
+        if ($method === 'POST') {
+            $adminController->adjustInventory();
+            exit;
+        }
+        http_response_code(405);
+        header('Allow: GET, POST');
+        exit;
+    }
+
+    if ($route === '/admin/coupons') {
+        $adminController = new AdminController();
+        if ($method === 'GET') {
+            $adminController->coupons();
+            exit;
+        }
+        if ($method === 'POST') {
+            $adminController->saveCoupon();
+            exit;
+        }
+        http_response_code(405);
+        header('Allow: GET, POST');
+        exit;
+    }
+
+    if (preg_match('~\A/admin/coupons/([1-9][0-9]*)/toggle\z~', $route, $matches) === 1) {
+        if ($method === 'POST') {
+            (new AdminController())->toggleCoupon($matches[1]);
+            exit;
+        }
+        http_response_code(405);
+        header('Allow: POST');
+        exit;
+    }
+
+    if ($route === '/admin/reports') {
+        if ($method === 'GET') {
+            (new AdminController())->reports();
+            exit;
+        }
+        http_response_code(405);
+        header('Allow: GET');
+        exit;
+    }
+
     if (str_starts_with($route, '/admin/')) {
         (new NotFoundController())->show();
+        exit;
+    }
+
+    if ($route === '/payment/vnpay/return' && $method === 'GET') {
+        (new PaymentController())->vnpayReturn();
+        exit;
+    }
+
+    if ($route === '/payment/vnpay/ipn' && $method === 'GET') {
+        (new PaymentController())->vnpayIpn();
         exit;
     }
 

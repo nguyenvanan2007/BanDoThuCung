@@ -133,7 +133,7 @@ final class AdminProductManager
         )->fetchColumn();
     }
 
-    public function create(array $product): string
+    public function create(array $product, string $changedByUserId): string
     {
         $this->connection->beginTransaction();
 
@@ -148,6 +148,7 @@ final class AdminProductManager
             $productId = (string) $this->connection->lastInsertId();
             $this->syncImages($productId, $product['images']);
             $this->syncVariants($productId, $product['variants']);
+            $this->recordInitialStock($productId, $changedByUserId);
             $this->connection->commit();
 
             return $productId;
@@ -159,11 +160,15 @@ final class AdminProductManager
         }
     }
 
-    public function update(string $id, array $product): void
+    public function update(string $id, array $product, string $changedByUserId): void
     {
         $this->connection->beginTransaction();
 
         try {
+            $before = $this->stockState($id, true);
+            if ($before === null) {
+                throw new \DomainException('Không tìm thấy sản phẩm cần cập nhật.');
+            }
             $statement = $this->connection->prepare(
                 'UPDATE products SET sku = :sku, name = :name, species = :species, food_type = :food_type,'
                 . ' category_id = :category_id, description = :description, image_path = :image_path,'
@@ -173,6 +178,7 @@ final class AdminProductManager
             $statement->execute($this->productColumns($product) + ['id' => $id]);
             $this->syncImages($id, $product['images']);
             $this->syncVariants($id, $product['variants']);
+            $this->recordStockChanges($id, $before, $this->stockState($id, false), $changedByUserId);
             $this->connection->commit();
         } catch (Throwable $exception) {
             if ($this->connection->inTransaction()) {
@@ -307,6 +313,155 @@ final class AdminProductManager
             ]);
         }
     }
+
+        private function recordInitialStock(string $productId, string $changedByUserId): void
+        {
+            $state = $this->stockState($productId, false);
+            if ($state === null) {
+                throw new \DomainException('Không thể tải tồn kho sản phẩm vừa tạo.');
+            }
+
+            if ($state['variants'] === []) {
+                if ($state['productStock'] > 0) {
+                    InventoryMovement::record(
+                        $this->connection,
+                        $productId,
+                        null,
+                        null,
+                        $changedByUserId,
+                        'restock',
+                        0,
+                        $state['productStock'],
+                        'Tồn kho ban đầu'
+                    );
+                }
+                return;
+            }
+
+            foreach ($state['variants'] as $variantId => $quantity) {
+                if ($quantity > 0) {
+                    InventoryMovement::record(
+                        $this->connection,
+                        $productId,
+                        $variantId,
+                        null,
+                        $changedByUserId,
+                        'restock',
+                        0,
+                        $quantity,
+                        'Tồn kho ban đầu'
+                    );
+                }
+            }
+        }
+
+        private function recordStockChanges(
+            string $productId,
+            array $before,
+            ?array $after,
+            string $changedByUserId
+        ): void {
+            if ($after === null) {
+                throw new \DomainException('Không thể tải tồn kho sản phẩm sau khi cập nhật.');
+            }
+
+            if ($before['variants'] === [] && $after['variants'] === []) {
+                $this->recordStockDifference(
+                    $productId,
+                    null,
+                    $before['productStock'],
+                    $after['productStock'],
+                    $changedByUserId
+                );
+                return;
+            }
+
+            if ($before['variants'] === [] && $before['productStock'] > 0) {
+                $this->recordStockDifference(
+                    $productId,
+                    null,
+                    $before['productStock'],
+                    0,
+                    $changedByUserId
+                );
+            }
+            if ($after['variants'] === [] && $after['productStock'] > 0) {
+                $this->recordStockDifference(
+                    $productId,
+                    null,
+                    0,
+                    $after['productStock'],
+                    $changedByUserId
+                );
+            }
+
+            $variantIds = array_unique(array_merge(
+                array_keys($before['variants']),
+                array_keys($after['variants'])
+            ));
+            foreach ($variantIds as $variantId) {
+                $this->recordStockDifference(
+                    $productId,
+                    (string) $variantId,
+                    (int) ($before['variants'][$variantId] ?? 0),
+                    (int) ($after['variants'][$variantId] ?? 0),
+                    $changedByUserId
+                );
+            }
+        }
+
+        private function recordStockDifference(
+            string $productId,
+            ?string $variantId,
+            int $before,
+            int $after,
+            string $changedByUserId
+        ): void {
+            if ($before === $after) {
+                return;
+            }
+            InventoryMovement::record(
+                $this->connection,
+                $productId,
+                $variantId,
+                null,
+                $changedByUserId,
+                $after > $before ? 'restock' : 'adjustment',
+                $before,
+                $after,
+                'Điều chỉnh qua hồ sơ sản phẩm'
+            );
+        }
+
+        private function stockState(string $productId, bool $lock): ?array
+        {
+            $lockClause = $lock && $this->connection->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql'
+                ? ' FOR UPDATE'
+                : '';
+            $product = $this->connection->prepare(
+                'SELECT stock_quantity FROM products WHERE id = :id AND is_demo = 0' . $lockClause
+            );
+            $product->execute(['id' => $productId]);
+            $productStock = $product->fetchColumn();
+            if ($productStock === false) {
+                return null;
+            }
+
+            $variants = $this->connection->prepare(
+                'SELECT id, stock_quantity FROM product_variants'
+                . ' WHERE product_id = :product_id AND is_active = 1 ORDER BY id' . $lockClause
+            );
+            $variants->execute(['product_id' => $productId]);
+            $variantStock = [];
+            foreach ($variants->fetchAll() as $variant) {
+                $variantStock[(string) $variant['id']] = (int) $variant['stock_quantity'];
+            }
+
+            return [
+                'productStock' => (int) $productStock,
+                'variants' => $variantStock,
+            ];
+        }
 
     private function mapProduct(array $row): array
     {

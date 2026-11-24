@@ -20,6 +20,7 @@
                         <th>Ngày đặt</th>
                         <th>Sản phẩm</th>
                         <th>Trạng thái</th>
+                        <th>Thanh toán</th>
                         <th>Tổng tiền</th>
                         <th></th>
                     </tr>
@@ -32,6 +33,8 @@
                             <td><?= e(date('d/m/Y H:i', strtotime((string) $order['created_at']))) ?></td>
                             <td><?= e($order['item_count']) ?></td>
                             <td><?= e(order_status_label((string) $order['status'])) ?></td>
+                            <td><?= e(payment_method_label((string) $order['payment_method'])) ?><br>
+                                <?= e(payment_status_label((string) $order['payment_status'])) ?></td>
                             <td><?= e(format_vnd((int) $order['total_vnd'])) ?></td>
                             <td><a href="/admin/orders/<?= e($order['id']) ?>">Chi tiết</a></td>
                         </tr>

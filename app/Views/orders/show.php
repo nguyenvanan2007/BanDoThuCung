@@ -6,9 +6,16 @@
         <span class="order-status order-status-<?= e($order['status']) ?>">
             <?= e(order_status_label((string) $order['status'])) ?>
         </span>
-        · Thanh toán khi nhận hàng (COD)
+        · <?= e(payment_method_label((string) $order['payment_method'])) ?>
     </p>
+    <p>Trạng thái thanh toán: <?= e(payment_status_label((string) $order['payment_status'])) ?></p>
 </section>
+
+<?php if ($order['status'] === 'cancelled' && $order['payment_status'] === 'paid'): ?>
+    <div class="form-errors" role="alert">
+        Giao dịch được xác nhận sau khi đơn đã hủy. Vui lòng liên hệ CSKH để được hướng dẫn hoàn tiền.
+    </div>
+<?php endif; ?>
 
 <?php if ($canCancel): ?>
     <section class="order-cancel-panel">
@@ -72,6 +79,12 @@
             <span>Phí giao hàng</span>
             <strong><?= e(format_vnd((int) $order['shipping_fee_vnd'])) ?></strong>
         </div>
+        <?php if ((int) $order['discount_vnd'] > 0): ?>
+            <div class="checkout-line">
+                <span>Giảm giá<?= $order['coupon_code'] !== null ? ' (' . e($order['coupon_code']) . ')' : '' ?></span>
+                <strong>-<?= e(format_vnd((int) $order['discount_vnd'])) ?></strong>
+            </div>
+        <?php endif; ?>
         <div class="checkout-total">
             <span>Tổng cộng</span>
             <strong><?= e(format_vnd((int) $order['total_vnd'])) ?></strong>

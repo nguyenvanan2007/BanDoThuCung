@@ -6,8 +6,11 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Core\Database;
+use App\Models\AdminInventoryManager;
 use App\Models\AdminOrderManager;
 use App\Models\AdminProductManager;
+use App\Models\AdminReportManager;
+use App\Models\CouponManager;
 use App\Models\User;
 use App\Services\OrderNotificationMailer;
 use DomainException;
@@ -236,7 +239,7 @@ final class AdminController extends Controller
         }
 
         try {
-            $manager->create($data);
+            $manager->create($data, (string) $_SESSION['user']['id']);
         } catch (PDOException $exception) {
             $this->removeUploadedProductImage($uploadedImagePath);
             if (($exception->errorInfo[0] ?? (string) $exception->getCode()) !== '23000') {
@@ -298,7 +301,7 @@ final class AdminController extends Controller
         }
 
         try {
-            $manager->update($productId, $data);
+            $manager->update($productId, $data, (string) $_SESSION['user']['id']);
         } catch (PDOException $exception) {
             $this->removeUploadedProductImage($uploadedImagePath);
             if (($exception->errorInfo[0] ?? (string) $exception->getCode()) !== '23000') {
@@ -377,7 +380,7 @@ final class AdminController extends Controller
         $this->render('admin/order-show', [
             'title' => 'Đơn ' . $order['order_number'] . ' | Quản trị TPet',
             'order' => $order,
-            'nextStatuses' => $manager->allowedTransitions((string) $order['status']),
+            'nextStatuses' => $this->orderTransitions($manager, $order),
         ]);
     }
 
@@ -423,6 +426,361 @@ final class AdminController extends Controller
         }
         $this->redirect('/admin/orders/' . rawurlencode($orderId));
     }
+
+    public function recordCodPayment(string $orderId): void
+    {
+        if (!$this->requireAdmin()) {
+            return;
+        }
+        if (!$this->hasValidCsrfToken()) {
+            $this->showForbidden();
+            return;
+        }
+
+        $manager = new AdminOrderManager(Database::connection());
+        try {
+            $manager->recordCodPayment($orderId);
+        } catch (DomainException $exception) {
+            $this->flashError($exception->getMessage());
+            $this->redirect('/admin/orders/' . rawurlencode($orderId));
+        }
+
+        $order = $manager->findById($orderId);
+        if ($order === null) {
+            throw new RuntimeException('Không thể tải đơn hàng vừa ghi nhận thanh toán.');
+        }
+        try {
+            (new OrderNotificationMailer())->sendPaymentUpdate($order);
+            $this->flashSuccess('Đã ghi nhận thu tiền COD và gửi email thông báo.');
+        } catch (MailException | RuntimeException $exception) {
+            error_log(sprintf(
+                'COD payment notification failed for order %s (%s).',
+                $orderId,
+                get_class($exception)
+            ));
+            $this->flashError('Đã ghi nhận thanh toán COD nhưng email thông báo chưa gửi được.');
+        }
+        $this->redirect('/admin/orders/' . rawurlencode($orderId));
+    }
+
+    public function recordRefund(string $orderId): void
+    {
+        if (!$this->requireAdmin()) {
+            return;
+        }
+        if (!$this->hasValidCsrfToken()) {
+            $this->showForbidden();
+            return;
+        }
+
+        $manager = new AdminOrderManager(Database::connection());
+        try {
+            $manager->recordRefundComplete(
+                $orderId,
+                (string) $_SESSION['user']['id'],
+                $this->postText('note')
+            );
+        } catch (DomainException $exception) {
+            $this->flashError($exception->getMessage());
+            $this->redirect('/admin/orders/' . rawurlencode($orderId));
+        }
+
+        $order = $manager->findById($orderId);
+        if ($order === null) {
+            throw new RuntimeException('Không thể tải đơn hàng vừa hoàn tiền.');
+        }
+        try {
+            (new OrderNotificationMailer())->sendRefundUpdate($order);
+            $this->flashSuccess('Đã ghi nhận hoàn tiền và gửi email thông báo.');
+        } catch (MailException | RuntimeException $exception) {
+            error_log(sprintf(
+                'Refund notification failed for order %s (%s).',
+                $orderId,
+                get_class($exception)
+            ));
+            $this->flashError('Đã ghi nhận hoàn tiền nhưng email thông báo chưa gửi được.');
+        }
+        $this->redirect('/admin/orders/' . rawurlencode($orderId));
+    }
+
+    public function inventory(): void
+    {
+            if (!$this->requireAdmin()) {
+                return;
+            }
+
+            $manager = new AdminInventoryManager(Database::connection());
+            $this->render('admin/inventory', [
+                'title' => 'Quản lý tồn kho | Quản trị TPet',
+                'products' => $manager->snapshot(),
+                'movements' => $manager->history(),
+                'errors' => [],
+            ]);
+        }
+
+    public function adjustInventory(): void
+    {
+            if (!$this->requireAdmin()) {
+                return;
+            }
+            if (!$this->hasValidCsrfToken()) {
+                $this->showForbidden();
+                return;
+            }
+
+            $productId = $this->postInteger('product_id');
+            $variantId = $this->postInteger('variant_id');
+            $deltaValue = $this->postText('quantity_delta');
+            $delta = preg_match('/\A-?[0-9]+\z/', $deltaValue) === 1
+                ? filter_var($deltaValue, FILTER_VALIDATE_INT)
+                : false;
+            $type = $this->postText('movement_type');
+            $reason = $this->postText('reason');
+            if ($productId === null || $delta === false) {
+                $this->flashError('Sản phẩm hoặc số lượng điều chỉnh không hợp lệ.');
+                $this->redirect('/admin/inventory');
+            }
+
+            try {
+                (new AdminInventoryManager(Database::connection()))->adjust(
+                    (string) $productId,
+                    $variantId === null ? null : (string) $variantId,
+                    $delta,
+                    $type,
+                    $reason,
+                    (string) $_SESSION['user']['id']
+                );
+            } catch (DomainException $exception) {
+                $this->flashError($exception->getMessage());
+                $this->redirect('/admin/inventory');
+            }
+
+            $this->flashSuccess('Đã cập nhật tồn kho và ghi lịch sử thay đổi.');
+            $this->redirect('/admin/inventory');
+        }
+
+    public function coupons(): void
+    {
+            if (!$this->requireAdmin()) {
+                return;
+            }
+
+            $form = $this->emptyCoupon();
+            $editId = $_GET['edit'] ?? null;
+            if (is_string($editId) && preg_match('/\A[1-9][0-9]*\z/', $editId) === 1) {
+                $coupon = (new CouponManager(Database::connection()))->findById($editId);
+                if ($coupon !== null) {
+                    $form = [
+                        'id' => (string) $coupon['id'],
+                        'code' => (string) $coupon['code'],
+                        'discount_type' => (string) $coupon['discount_type'],
+                        'discount_value' => (string) $coupon['discount_value'],
+                        'starts_at' => str_replace(' ', 'T', substr((string) $coupon['starts_at'], 0, 16)),
+                        'ends_at' => str_replace(' ', 'T', substr((string) $coupon['ends_at'], 0, 16)),
+                        'min_order_vnd' => (string) $coupon['min_order_vnd'],
+                        'max_uses' => $coupon['max_uses'] === null ? '' : (string) $coupon['max_uses'],
+                        'allow_stackable' => (int) $coupon['allow_stackable'] === 1,
+                        'is_active' => (int) $coupon['is_active'] === 1,
+                    ];
+                }
+            }
+            $this->renderCouponPage([], $form);
+        }
+
+    public function saveCoupon(): void
+    {
+            if (!$this->requireAdmin()) {
+                return;
+            }
+            if (!$this->hasValidCsrfToken()) {
+                $this->showForbidden();
+                return;
+            }
+
+            $id = $this->postText('id');
+            $id = $id === '' ? null : $id;
+            $code = strtoupper($this->postText('code'));
+            $type = $this->postText('discount_type');
+            $value = $this->postInteger('discount_value');
+            $minimum = $this->postInteger('min_order_vnd');
+            $maxUsesText = $this->postText('max_uses');
+            $maxUses = $maxUsesText === '' ? null : $this->integerValue($maxUsesText);
+            $startsInput = $this->postText('starts_at');
+            $endsInput = $this->postText('ends_at');
+            $starts = $this->couponDateTime($startsInput);
+            $ends = $this->couponDateTime($endsInput);
+            $errors = [];
+
+            if ($id !== null && preg_match('/\A[1-9][0-9]*\z/', $id) !== 1) {
+                $errors[] = 'Mã định danh giảm giá không hợp lệ.';
+            }
+            if (preg_match('/\A[A-Z0-9_-]{3,40}\z/', $code) !== 1) {
+                $errors[] = 'Mã giảm giá cần có 3 đến 40 ký tự chữ, số, gạch ngang hoặc gạch dưới.';
+            }
+            if (!in_array($type, ['fixed', 'percent'], true)) {
+                $errors[] = 'Chọn kiểu giảm giá hợp lệ.';
+            }
+            if ($value === null || $value < 1 || ($type === 'percent' && $value > 100)) {
+                $errors[] = 'Giá trị giảm giá không hợp lệ.';
+            }
+            if ($minimum === null) {
+                $errors[] = 'Giá trị đơn tối thiểu phải là số nguyên không âm.';
+            }
+            if ($maxUsesText !== '' && ($maxUses === null || $maxUses < 1 || $maxUses > 4294967295)) {
+                $errors[] = 'Giới hạn lượt dùng phải để trống hoặc là số nguyên dương.';
+            }
+            if ($starts === null || $ends === null || $ends <= $starts) {
+                $errors[] = 'Thời gian kết thúc phải sau thời gian bắt đầu.';
+            }
+
+            $form = [
+                'id' => $id ?? '',
+                'code' => $code,
+                'discount_type' => $type,
+                'discount_value' => $value ?? '',
+                'starts_at' => $startsInput,
+                'ends_at' => $endsInput,
+                'min_order_vnd' => $minimum ?? '',
+                'max_uses' => $maxUsesText,
+                'allow_stackable' => $this->postText('allow_stackable') === '1',
+                'is_active' => $this->postText('is_active') === '1',
+            ];
+
+            if ($errors === []) {
+                try {
+                    if ($id !== null && (new CouponManager(Database::connection()))->findById($id) === null) {
+                        $errors[] = 'Không tìm thấy mã giảm giá cần sửa.';
+                    }
+                    if ($errors !== []) {
+                        $this->renderCouponPage($errors, $form);
+                        return;
+                    }
+                    (new CouponManager(Database::connection()))->save($id, [
+                        'code' => $code,
+                        'type' => $type,
+                        'value' => $value,
+                        'starts' => $starts,
+                        'ends' => $ends,
+                        'minimum' => $minimum,
+                        'max_uses' => $maxUses,
+                        'stackable' => $form['allow_stackable'],
+                        'active' => $form['is_active'],
+                    ]);
+                } catch (PDOException $exception) {
+                    if (($exception->errorInfo[0] ?? (string) $exception->getCode()) !== '23000') {
+                        throw $exception;
+                    }
+                    $errors[] = 'Mã giảm giá đã tồn tại.';
+                }
+            }
+
+            if ($errors !== []) {
+                $this->renderCouponPage($errors, $form);
+                return;
+            }
+
+            $this->flashSuccess($id === null ? 'Đã tạo mã giảm giá.' : 'Đã cập nhật mã giảm giá.');
+            $this->redirect('/admin/coupons');
+        }
+
+    public function toggleCoupon(string $couponId): void
+    {
+            if (!$this->requireAdmin()) {
+                return;
+            }
+            if (!$this->hasValidCsrfToken()) {
+                $this->showForbidden();
+                return;
+            }
+
+            $active = $this->postText('is_active') === '1';
+            if (!(new CouponManager(Database::connection()))->setActive($couponId, $active)) {
+                $this->flashError('Không tìm thấy mã giảm giá.');
+            } else {
+                $this->flashSuccess($active ? 'Đã kích hoạt mã giảm giá.' : 'Đã tạm ngưng mã giảm giá.');
+            }
+            $this->redirect('/admin/coupons');
+        }
+
+    public function reports(): void
+    {
+            if (!$this->requireAdmin()) {
+                return;
+            }
+
+            $reports = new AdminReportManager(Database::connection());
+            $this->render('admin/reports', [
+                'title' => 'Báo cáo cửa hàng | Quản trị TPet',
+                'orderCounts' => $reports->orderCounts(),
+                'dailyRevenue' => $reports->dailyRevenue(),
+                'monthlyRevenue' => $reports->monthlyRevenue(),
+                'bestSellers' => $reports->bestSellers(),
+                'slowSellers' => $reports->slowSellers(),
+                'inventoryAlerts' => $reports->inventoryAlerts(),
+                'couponUsage' => $reports->couponUsage(),
+            ]);
+        }
+
+    private function renderCouponPage(array $errors, array $form): void
+    {
+            $this->render('admin/coupons', [
+                'title' => 'Mã giảm giá | Quản trị TPet',
+                'coupons' => (new CouponManager(Database::connection()))->findAll(),
+                'errors' => $errors,
+                'form' => $form,
+            ]);
+        }
+
+    private function emptyCoupon(): array
+    {
+            return [
+                'id' => '',
+                'code' => '',
+                'discount_type' => 'percent',
+                'discount_value' => '',
+                'starts_at' => '',
+                'ends_at' => '',
+                'min_order_vnd' => '0',
+                'max_uses' => '',
+                'allow_stackable' => false,
+                'is_active' => true,
+            ];
+        }
+
+    private function couponDateTime(string $value): ?string
+    {
+            $date = \DateTimeImmutable::createFromFormat(
+                '!Y-m-d\TH:i',
+                $value,
+                new \DateTimeZone('Asia/Ho_Chi_Minh')
+            );
+            $errors = \DateTimeImmutable::getLastErrors();
+            if ($date === false || (is_array($errors)
+                && ($errors['warning_count'] > 0 || $errors['error_count'] > 0))) {
+                return null;
+            }
+
+            return $date->format('Y-m-d H:i:s');
+        }
+
+        private function orderTransitions(AdminOrderManager $manager, array $order): array
+        {
+            $nextStatuses = $manager->allowedTransitions((string) $order['status']);
+            if ($order['payment_status'] === 'paid') {
+                return array_values(array_filter(
+                    $nextStatuses,
+                    static fn (string $status): bool => $status !== 'cancelled'
+                ));
+            }
+            if ($order['payment_method'] === 'vnpay') {
+                return array_values(array_filter(
+                    $nextStatuses,
+                    static fn (string $status): bool => $status === 'cancelled'
+                ));
+            }
+
+            return $nextStatuses;
+        }
 
     private function requireAdmin(): bool
     {

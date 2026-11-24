@@ -33,6 +33,9 @@
                     <a href="/admin/categories">Danh mục</a>
                     <a href="/admin/users">Tài khoản</a>
                     <a href="/admin/orders">Đơn hàng</a>
+                    <a href="/admin/inventory">Kho</a>
+                    <a href="/admin/coupons">Mã giảm giá</a>
+                    <a href="/admin/reports">Báo cáo</a>
                 <?php else: ?>
                     <a href="/account">Tài khoản</a>
                     <a href="/orders">Đơn hàng</a>

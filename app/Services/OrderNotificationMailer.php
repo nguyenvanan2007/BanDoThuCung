@@ -15,7 +15,9 @@ final class OrderNotificationMailer
         $this->send(
             $order,
             'TPet đã nhận đơn hàng ' . (string) $order['order_number'],
-            'Cảm ơn bạn đã đặt hàng. TPet đã nhận được đơn hàng và sẽ sớm xác nhận.'
+            ($order['payment_method'] ?? 'cod') === 'vnpay'
+                ? 'Đơn hàng đã được tạo. Vui lòng hoàn tất thanh toán VNPAY để xác nhận.'
+                : 'Cảm ơn bạn đã đặt hàng. TPet đã nhận được đơn hàng và sẽ sớm xác nhận.'
         );
     }
 
@@ -25,6 +27,31 @@ final class OrderNotificationMailer
             $order,
             'Cập nhật đơn hàng ' . (string) $order['order_number'],
             'Đơn hàng của bạn vừa được cập nhật trạng thái.'
+        );
+    }
+
+    public function sendPaymentUpdate(array $order): void
+    {
+        $this->send(
+            $order,
+            'Cập nhật thanh toán đơn hàng ' . (string) $order['order_number'],
+            ($order['payment_status'] ?? '') === 'failed'
+                ? 'Thanh toán VNPAY không thành công. Đơn đã hủy và tồn kho đã được hoàn lại.'
+                : (($order['status'] ?? '') === 'cancelled'
+                    && ($order['payment_status'] ?? '') === 'paid'
+                    ? 'VNPAY đã xác nhận khoản thanh toán cho đơn đã hủy. Vui lòng liên hệ CSKH để được hỗ trợ hoàn tiền.'
+                    : (($order['payment_method'] ?? 'cod') === 'vnpay'
+                        ? 'Thanh toán đơn hàng của bạn đã được VNPAY xác nhận.'
+                        : 'TPet đã ghi nhận thanh toán COD cho đơn hàng của bạn.'))
+        );
+    }
+
+    public function sendRefundUpdate(array $order): void
+    {
+        $this->send(
+            $order,
+            'Cập nhật hoàn tiền đơn hàng ' . (string) $order['order_number'],
+            'TPet đã ghi nhận hoàn tiền cho đơn hàng của bạn.'
         );
     }
 
@@ -115,25 +142,39 @@ final class OrderNotificationMailer
 
         $orderNumber = $escape($order['order_number'] ?? '');
         $status = $escape(order_status_label((string) ($order['status'] ?? '')));
+        $paymentStatus = $escape(payment_status_label((string) ($order['payment_status'] ?? 'unpaid')));
         $recipientName = $escape($order['recipient_name'] ?? '');
         $subtotal = format_vnd((int) ($order['subtotal_vnd'] ?? 0));
         $shippingFee = format_vnd((int) ($order['shipping_fee_vnd'] ?? 0));
+        $discount = format_vnd((int) ($order['discount_vnd'] ?? 0));
         $total = format_vnd((int) ($order['total_vnd'] ?? 0));
+        $paymentMethod = ($order['payment_method'] ?? 'cod') === 'vnpay'
+            ? 'VNPAY'
+            : 'Tiền mặt khi nhận hàng (COD)';
+        $discountLine = (int) ($order['discount_vnd'] ?? 0) > 0
+            ? '<br>Giảm giá: ' . $escape($discount)
+            : '';
         $html = '<!doctype html><html lang="vi"><meta charset="utf-8"><body>'
             . '<h1>' . $escape($message) . '</h1><p>Xin chào ' . $recipientName . '.</p>'
-            . '<p>Mã đơn: <strong>' . $orderNumber . '</strong><br>Trạng thái: ' . $status . '</p>'
+            . '<p>Mã đơn: <strong>' . $orderNumber . '</strong><br>Trạng thái đơn: ' . $status
+            . '<br>Thanh toán: ' . $paymentStatus . '</p>'
             . '<table><thead><tr><th>Sản phẩm</th><th>Số lượng</th><th>Tạm tính</th></tr></thead>'
             . '<tbody>' . $rows . '</tbody></table>'
             . '<p>Tạm tính: ' . $escape($subtotal) . '<br>Phí giao hàng: ' . $escape($shippingFee)
-            . '<br><strong>Tổng cộng (COD): ' . $escape($total) . '</strong></p>'
+            . $discountLine
+            . '<br>Phương thức thanh toán: ' . $escape($paymentMethod)
+            . '<br><strong>Tổng cộng: ' . $escape($total) . '</strong></p>'
             . '</body></html>';
         $text = $message . "\nXin chào " . (string) ($order['recipient_name'] ?? '')
             . "\nMã đơn: " . (string) ($order['order_number'] ?? '')
             . "\nTrạng thái: " . order_status_label((string) ($order['status'] ?? ''))
+            . "\nThanh toán: " . payment_status_label((string) ($order['payment_status'] ?? 'unpaid'))
             . "\n" . implode("\n", $textItems)
             . "\nTạm tính: " . $subtotal
             . "\nPhí giao hàng: " . $shippingFee
-            . "\nTổng cộng (COD): " . $total;
+            . ((int) ($order['discount_vnd'] ?? 0) > 0 ? "\nGiảm giá: " . $discount : '')
+            . "\nPhương thức thanh toán: " . $paymentMethod
+            . "\nTổng cộng: " . $total;
 
         return [$html, $text];
     }

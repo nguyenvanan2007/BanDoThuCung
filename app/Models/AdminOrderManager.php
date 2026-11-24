@@ -39,7 +39,7 @@ final class AdminOrderManager
     {
         $statement = $this->connection->query(
             'SELECT o.id, o.order_number, o.recipient_name, o.total_vnd, o.status, o.created_at,'
-            . ' u.name AS customer_name,'
+            . ' o.payment_method, o.payment_status, o.discount_vnd, u.name AS customer_name,'
             . ' (SELECT COALESCE(SUM(oi.quantity), 0) FROM order_items oi WHERE oi.order_id = o.id) AS item_count'
             . ' FROM orders o INNER JOIN users u ON u.id = o.user_id'
             . ' ORDER BY o.created_at DESC, o.id DESC'
@@ -52,7 +52,8 @@ final class AdminOrderManager
     {
         $statement = $this->connection->prepare(
             'SELECT o.id, o.order_number, o.recipient_name, o.phone, o.shipping_address,'
-            . ' o.subtotal_vnd, o.shipping_fee_vnd, o.total_vnd, o.payment_method, o.status, o.created_at,'
+            .             ' o.subtotal_vnd, o.shipping_fee_vnd, o.discount_vnd, o.coupon_code, o.total_vnd,'
+            . ' o.payment_method, o.payment_status, o.status, o.created_at,'
             . ' u.name AS customer_name, u.email AS customer_email'
             . ' FROM orders o INNER JOIN users u ON u.id = o.user_id'
             . ' WHERE o.id = :id LIMIT 1'
@@ -86,6 +87,13 @@ final class AdminOrderManager
         );
         $history->execute(['order_id' => $id]);
         $order['statusHistory'] = $history->fetchAll();
+        $refund = $this->connection->prepare(
+            'SELECT r.amount_vnd, r.status, r.note, r.processed_at, u.name AS processed_by_name'
+            . ' FROM payment_refunds r LEFT JOIN users u ON u.id = r.processed_by_user_id'
+            . ' WHERE r.order_id = :order_id LIMIT 1'
+        );
+        $refund->execute(['order_id' => $id]);
+        $order['refund'] = $refund->fetch() ?: null;
 
         return $order;
     }
@@ -98,6 +106,92 @@ final class AdminOrderManager
     public function cancelForCustomer(string $orderId, string $customerUserId): bool
     {
         return $this->updateStatus($orderId, 'cancelled', $customerUserId, $customerUserId);
+    }
+
+    public function recordCodPayment(string $orderId): void
+    {
+        $this->connection->beginTransaction();
+        try {
+            $lockClause = $this->connection->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql'
+                ? ' FOR UPDATE'
+                : '';
+            $statement = $this->connection->prepare(
+                'SELECT payment_method, payment_status, status FROM orders WHERE id = :id' . $lockClause
+            );
+            $statement->execute(['id' => $orderId]);
+            $order = $statement->fetch();
+            if (!is_array($order)) {
+                throw new DomainException('Không tìm thấy đơn hàng.');
+            }
+            if ($order['payment_method'] !== 'cod' || $order['payment_status'] !== 'unpaid'
+                || !in_array($order['status'], ['shipping', 'completed'], true)) {
+                throw new DomainException('Chỉ ghi nhận COD đã thu khi đơn đang giao hoặc đã hoàn thành.');
+            }
+
+            $update = $this->connection->prepare(
+                'UPDATE orders SET payment_status = :payment_status WHERE id = :id'
+            );
+            $update->execute(['payment_status' => 'paid', 'id' => $orderId]);
+            $this->connection->commit();
+        } catch (Throwable $exception) {
+            if ($this->connection->inTransaction()) {
+                $this->connection->rollBack();
+            }
+            throw $exception;
+        }
+    }
+
+    public function recordRefundComplete(string $orderId, string $adminUserId, string $note): void
+    {
+        if (mb_strlen($note) < 3 || mb_strlen($note) > 500) {
+            throw new DomainException('Ghi chú hoàn tiền cần có từ 3 đến 500 ký tự.');
+        }
+
+        $this->connection->beginTransaction();
+        try {
+            $lockClause = $this->connection->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql'
+                ? ' FOR UPDATE'
+                : '';
+            $statement = $this->connection->prepare(
+                'SELECT total_vnd, payment_status FROM orders WHERE id = :id' . $lockClause
+            );
+            $statement->execute(['id' => $orderId]);
+            $order = $statement->fetch();
+            if (!is_array($order) || $order['payment_status'] !== 'paid') {
+                throw new DomainException('Chỉ có thể ghi nhận hoàn tiền cho đơn đã thanh toán.');
+            }
+
+            $refund = $this->connection->prepare(
+                'INSERT INTO payment_refunds'
+                . ' (order_id, amount_vnd, status, note, processed_by_user_id, processed_at)'
+                . ' VALUES (:order_id, :amount, :status, :note, :user_id, NOW())'
+            );
+            $refund->execute([
+                'order_id' => $orderId,
+                'amount' => (int) $order['total_vnd'],
+                'status' => 'completed',
+                'note' => $note,
+                'user_id' => $adminUserId,
+            ]);
+            $transaction = $this->connection->prepare(
+                'UPDATE payment_transactions SET status = :status WHERE order_id = :order_id AND status = :paid'
+            );
+            $transaction->execute([
+                'status' => 'refunded',
+                'order_id' => $orderId,
+                'paid' => 'paid',
+            ]);
+            $update = $this->connection->prepare(
+                'UPDATE orders SET payment_status = :status WHERE id = :id'
+            );
+            $update->execute(['status' => 'refunded', 'id' => $orderId]);
+            $this->connection->commit();
+        } catch (Throwable $exception) {
+            if ($this->connection->inTransaction()) {
+                $this->connection->rollBack();
+            }
+            throw $exception;
+        }
     }
 
     public function updateStatus(
@@ -118,7 +212,7 @@ final class AdminOrderManager
                 ? ' FOR UPDATE'
                 : '';
             $currentStatement = $this->connection->prepare(
-                'SELECT status, user_id FROM orders WHERE id = :id' . $lockClause
+                'SELECT status, payment_method, payment_status, user_id FROM orders WHERE id = :id' . $lockClause
             );
             $currentStatement->execute(['id' => $orderId]);
             $currentOrder = $currentStatement->fetch();
@@ -130,6 +224,8 @@ final class AdminOrderManager
                 throw new DomainException('Không tìm thấy đơn hàng.');
             }
             $currentStatus = (string) $currentOrder['status'];
+            $currentPaymentMethod = (string) $currentOrder['payment_method'];
+            $currentPaymentStatus = (string) $currentOrder['payment_status'];
 
             if ($currentStatus === $nextStatus) {
                 $this->connection->commit();
@@ -138,6 +234,16 @@ final class AdminOrderManager
 
             if ($customerUserId !== null && $currentStatus !== 'pending') {
                 throw new DomainException('Chỉ có thể hủy đơn khi đơn hàng còn chờ xác nhận.');
+            }
+            if ($nextStatus === 'cancelled' && $currentPaymentStatus === 'paid') {
+                throw new DomainException('Đơn đã thanh toán; cần hoàn tiền trước khi hủy đơn.');
+            }
+            if ($nextStatus !== 'cancelled' && $currentPaymentMethod === 'vnpay'
+                && $currentPaymentStatus !== 'paid') {
+                throw new DomainException('Chỉ xác nhận đơn VNPAY sau khi IPN đã xác nhận thanh toán.');
+            }
+            if ($nextStatus !== 'cancelled' && $currentPaymentStatus === 'refunded') {
+                throw new DomainException('Không thể tiếp tục xử lý đơn đã hoàn tiền.');
             }
 
             if (!in_array($nextStatus, self::STATUS_TRANSITIONS[$currentStatus] ?? [], true)) {
@@ -156,33 +262,77 @@ final class AdminOrderManager
                     'UPDATE product_variants SET stock_quantity = stock_quantity + :quantity'
                     . ' WHERE id = :id AND product_id = :product_id'
                 );
+                $lockProductStock = $this->connection->prepare(
+                    'SELECT stock_quantity FROM products WHERE id = :id' . $lockClause
+                );
+                $lockVariantStock = $this->connection->prepare(
+                    'SELECT stock_quantity FROM product_variants'
+                    . ' WHERE id = :id AND product_id = :product_id' . $lockClause
+                );
 
                 foreach ($items->fetchAll() as $item) {
+                    $productId = (string) $item['product_id'];
+                    $quantity = (int) $item['quantity'];
+                    $lockProductStock->execute(['id' => $productId]);
+                    $productStock = $lockProductStock->fetchColumn();
+                    if ($productStock === false || (int) $productStock + $quantity > 1000000000) {
+                        throw new DomainException('Không thể hoàn lại tồn kho cho đơn hàng này.');
+                    }
                     $restoreStock->execute([
-                        'quantity' => (int) $item['quantity'],
-                        'id' => (string) $item['product_id'],
+                        'quantity' => $quantity,
+                        'id' => $productId,
                     ]);
                     if ($restoreStock->rowCount() !== 1) {
                         throw new DomainException('Không thể hoàn lại tồn kho cho đơn hàng này.');
                     }
+                    $variantId = null;
+                    $before = (int) $productStock;
                     if ($item['product_variant_id'] !== null) {
+                        $variantId = (string) $item['product_variant_id'];
+                        $lockVariantStock->execute(['id' => $variantId, 'product_id' => $productId]);
+                        $variantStock = $lockVariantStock->fetchColumn();
+                        if ($variantStock === false) {
+                            $variantId = null;
+                        } else {
+                            if ((int) $variantStock + $quantity > 1000000000) {
+                                throw new DomainException('Không thể hoàn lại tồn kho biến thể cho đơn hàng này.');
+                            }
+                            $before = (int) $variantStock;
+                        }
+                    }
+                    if ($variantId !== null) {
                         $restoreVariantStock->execute([
-                            'quantity' => (int) $item['quantity'],
-                            'id' => (string) $item['product_variant_id'],
-                            'product_id' => (string) $item['product_id'],
+                            'quantity' => $quantity,
+                            'id' => $variantId,
+                            'product_id' => $productId,
                         ]);
                         if ($restoreVariantStock->rowCount() !== 1) {
                             throw new DomainException('Không thể hoàn lại tồn kho biến thể cho đơn hàng này.');
                         }
                     }
+                    InventoryMovement::record(
+                        $this->connection,
+                        $productId,
+                        $variantId,
+                        $orderId,
+                        $changedByUserId,
+                        'cancellation',
+                        $before,
+                        $before + $quantity,
+                        'Hủy đơn hàng'
+                    );
                 }
+                CouponManager::releaseForOrder($this->connection, $orderId);
             }
 
             $update = $this->connection->prepare(
-                'UPDATE orders SET status = :status WHERE id = :id'
+                'UPDATE orders SET status = :status, payment_status = CASE'
+                . " WHEN :next_status = 'cancelled' AND payment_status IN ('unpaid', 'pending')"
+                . " THEN 'cancelled' ELSE payment_status END WHERE id = :id"
             );
             $update->execute([
                 'status' => $nextStatus,
+                'next_status' => $nextStatus,
                 'id' => $orderId,
             ]);
             $history = $this->connection->prepare(

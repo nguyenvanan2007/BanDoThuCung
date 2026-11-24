@@ -1,7 +1,11 @@
 <section class="page-heading">
     <p class="eyebrow"><a href="/admin">Quản trị</a> / <a href="/admin/orders">Đơn hàng</a></p>
     <h1>Đơn <?= e($order['order_number']) ?></h1>
-    <p class="page-description">Trạng thái hiện tại: <strong><?= e(order_status_label((string) $order['status'])) ?></strong></p>
+    <p class="page-description">
+        Trạng thái đơn: <strong><?= e(order_status_label((string) $order['status'])) ?></strong>
+        · Thanh toán: <strong><?= e(payment_method_label((string) $order['payment_method'])) ?></strong>
+        · <?= e(payment_status_label((string) $order['payment_status'])) ?>
+    </p>
 </section>
 
 <section class="admin-order-layout">
@@ -53,10 +57,43 @@
             <span>Phí giao hàng</span>
             <strong><?= e(format_vnd((int) $order['shipping_fee_vnd'])) ?></strong>
         </div>
+        <?php if ((int) $order['discount_vnd'] > 0): ?>
+            <div class="checkout-line">
+                <span>Giảm giá<?= $order['coupon_code'] !== null ? ' (' . e($order['coupon_code']) . ')' : '' ?></span>
+                <strong>-<?= e(format_vnd((int) $order['discount_vnd'])) ?></strong>
+            </div>
+        <?php endif; ?>
         <div class="checkout-total">
-            <span>Tổng cộng (COD)</span>
+            <span>Tổng cộng</span>
             <strong><?= e(format_vnd((int) $order['total_vnd'])) ?></strong>
         </div>
+        <?php if ($order['refund'] !== null): ?>
+            <hr>
+            <h3>Thông tin hoàn tiền</h3>
+            <p><?= e(payment_status_label((string) $order['payment_status'])) ?> ·
+                <?= e(format_vnd((int) $order['refund']['amount_vnd'])) ?></p>
+            <p><?= e($order['refund']['note']) ?></p>
+            <small><?= e($order['refund']['processed_at']) ?> · <?= e($order['refund']['processed_by_name'] ?? 'Admin') ?></small>
+        <?php endif; ?>
+
+        <?php if ($order['payment_method'] === 'cod'
+            && $order['payment_status'] === 'unpaid'
+            && in_array($order['status'], ['shipping', 'completed'], true)): ?>
+            <form class="admin-status-form" method="post" action="/admin/orders/<?= e($order['id']) ?>/cod-paid">
+                <input type="hidden" name="_csrf_token" value="<?= e(csrf_token()) ?>">
+                <button class="button" type="submit">Ghi nhận đã thu tiền COD</button>
+            </form>
+        <?php endif; ?>
+
+        <?php if ($order['payment_status'] === 'paid'): ?>
+            <form class="admin-status-form" method="post" action="/admin/orders/<?= e($order['id']) ?>/refund">
+                <input type="hidden" name="_csrf_token" value="<?= e(csrf_token()) ?>">
+                <p>Thực hiện hoàn tiền trên cổng thanh toán trước, sau đó ghi nhận kết quả tại đây.</p>
+                <label for="refund-note">Ghi chú / mã giao dịch hoàn tiền</label>
+                <input id="refund-note" name="note" type="text" minlength="3" maxlength="500" required>
+                <button class="button danger-button" type="submit">Ghi nhận đã hoàn tiền</button>
+            </form>
+        <?php endif; ?>
 
         <?php if ($nextStatuses !== []): ?>
             <form class="admin-status-form" method="post" action="/admin/orders/<?= e($order['id']) ?>/status">

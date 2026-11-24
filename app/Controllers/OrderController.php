@@ -48,7 +48,7 @@ final class OrderController extends Controller
         $this->render('orders/show', [
             'title' => 'Chi tiết đơn hàng ' . $order['order_number'] . ' | TPet',
             'order' => $order,
-            'canCancel' => $order['status'] === 'pending',
+            'canCancel' => $order['status'] === 'pending' && $order['payment_status'] !== 'paid',
         ]);
     }
 

@@ -20,7 +20,10 @@ final class Order
         string $recipientName,
         string $phone,
         string $address,
-        int $shippingFee
+        int $shippingFee,
+        string $paymentMethod = 'cod',
+        ?string $couponCode = null,
+        ?string $paymentReference = null
     ): string {
         if ($cartItems === []) {
             throw new DomainException('Giỏ hàng đang trống.');
@@ -32,6 +35,13 @@ final class Order
         }
         if ($shippingFee < 0) {
             throw new DomainException('Phí giao hàng không hợp lệ.');
+        }
+        if (!in_array($paymentMethod, ['cod', 'vnpay'], true)
+            || ($paymentMethod === 'vnpay'
+                && ($paymentReference === null
+                    || preg_match('/\A[A-Za-z0-9_-]{1,100}\z/', $paymentReference) !== 1))
+            || ($paymentMethod === 'cod' && $paymentReference !== null)) {
+            throw new DomainException('Phương thức thanh toán không hợp lệ.');
         }
 
         $this->connection->beginTransaction();
@@ -147,22 +157,57 @@ final class Order
                     'price' => $price,
                     'quantity' => $quantity,
                     'subtotal' => $lineTotal,
+                    'stockBefore' => $availableStock,
                 ];
+            }
+
+            $coupon = null;
+            $discount = 0;
+            $couponCode = $couponCode === null ? '' : strtoupper(trim($couponCode));
+            if ($couponCode !== '') {
+                if (preg_match('/\A[A-Z0-9_-]{3,40}\z/', $couponCode) !== 1) {
+                    throw new DomainException('Mã giảm giá không hợp lệ.');
+                }
+                $couponStatement = $this->connection->prepare(
+                    'SELECT id, code, discount_type, discount_value, min_order_vnd, max_uses, used_count'
+                    . ' FROM coupons WHERE code = :code AND is_active = 1'
+                    . ' AND starts_at <= NOW() AND ends_at >= NOW() LIMIT 1' . $lockClause
+                );
+                $couponStatement->execute(['code' => $couponCode]);
+                $coupon = $couponStatement->fetch();
+                if (!is_array($coupon)) {
+                    throw new DomainException('Mã giảm giá không tồn tại, đã hết hạn hoặc đang tạm ngưng.');
+                }
+                if ($subtotal < (int) $coupon['min_order_vnd']) {
+                    throw new DomainException('Đơn hàng chưa đạt giá trị tối thiểu của mã giảm giá.');
+                }
+                if ($coupon['max_uses'] !== null && (int) $coupon['used_count'] >= (int) $coupon['max_uses']) {
+                    throw new DomainException('Mã giảm giá đã hết lượt sử dụng.');
+                }
+                $discount = CouponManager::discountFor($coupon, $subtotal);
             }
 
             if ($subtotal > PHP_INT_MAX - $shippingFee) {
                 throw new DomainException('Phí giao hàng hoặc tổng giá trị đơn hàng không hợp lệ.');
             }
 
-            $total = $subtotal + $shippingFee;
+            $total = $subtotal + $shippingFee - $discount;
+            if ($paymentMethod === 'vnpay' && $total > intdiv(PHP_INT_MAX, 100)) {
+                throw new DomainException('Tổng tiền vượt quá giới hạn của cổng thanh toán.');
+            }
+            if ($paymentMethod === 'vnpay' && $total < 1) {
+                throw new DomainException('Tổng tiền sau giảm giá phải lớn hơn 0 để thanh toán qua VNPAY.');
+            }
             $orderNumber = 'PH-' . date('YmdHis') . '-' . strtoupper(bin2hex(random_bytes(4)));
             $insertOrder = $this->connection->prepare(
                 'INSERT INTO orders'
                 . ' (user_id, order_number, recipient_name, phone, shipping_address,'
-                . ' subtotal_vnd, shipping_fee_vnd, total_vnd, payment_method, status)'
+                . ' subtotal_vnd, shipping_fee_vnd, discount_vnd, coupon_id, coupon_code, total_vnd,'
+                . ' payment_method, payment_status, status)'
                 . ' VALUES'
                 . ' (:user_id, :order_number, :recipient_name, :phone, :shipping_address,'
-                . ' :subtotal_vnd, :shipping_fee_vnd, :total_vnd, :payment_method, :status)'
+                . ' :subtotal_vnd, :shipping_fee_vnd, :discount_vnd, :coupon_id, :coupon_code, :total_vnd,'
+                . ' :payment_method, :payment_status, :status)'
             );
             $insertOrder->execute([
                 'user_id' => $userId,
@@ -172,8 +217,12 @@ final class Order
                 'shipping_address' => $address,
                 'subtotal_vnd' => $subtotal,
                 'shipping_fee_vnd' => $shippingFee,
+                'discount_vnd' => $discount,
+                'coupon_id' => is_array($coupon) ? (string) $coupon['id'] : null,
+                'coupon_code' => is_array($coupon) ? (string) $coupon['code'] : null,
                 'total_vnd' => $total,
-                'payment_method' => 'cod',
+                'payment_method' => $paymentMethod,
+                'payment_status' => $paymentMethod === 'vnpay' ? 'pending' : 'unpaid',
                 'status' => 'pending',
             ]);
             $orderId = (string) $this->connection->lastInsertId();
@@ -229,6 +278,17 @@ final class Order
                         );
                     }
                 }
+                InventoryMovement::record(
+                    $this->connection,
+                    $product['id'],
+                    $product['variantId'],
+                    $orderId,
+                    $userId,
+                    'order',
+                    $product['stockBefore'],
+                    $product['stockBefore'] - $product['quantity'],
+                    'Đặt hàng ' . $orderNumber
+                );
 
                 $insertItem->execute([
                     'order_id' => $orderId,
@@ -240,6 +300,38 @@ final class Order
                     'quantity' => $product['quantity'],
                     'unit_price_vnd' => $product['price'],
                     'subtotal_vnd' => $product['subtotal'],
+                ]);
+            }
+
+            if (is_array($coupon)) {
+                $updateCoupon = $this->connection->prepare(
+                    'UPDATE coupons SET used_count = used_count + 1 WHERE id = :id'
+                );
+                $updateCoupon->execute(['id' => (string) $coupon['id']]);
+                $redemption = $this->connection->prepare(
+                    'INSERT INTO coupon_redemptions (coupon_id, order_id, user_id, status)'
+                    . ' VALUES (:coupon_id, :order_id, :user_id, :status)'
+                );
+                $redemption->execute([
+                    'coupon_id' => (string) $coupon['id'],
+                    'order_id' => $orderId,
+                    'user_id' => $userId,
+                    'status' => $paymentMethod === 'vnpay' ? 'reserved' : 'used',
+                ]);
+            }
+
+            if ($paymentMethod === 'vnpay') {
+                $transaction = $this->connection->prepare(
+                    'INSERT INTO payment_transactions'
+                    . ' (order_id, provider, transaction_ref, amount_vnd, status)'
+                    . ' VALUES (:order_id, :provider, :reference, :amount, :status)'
+                );
+                $transaction->execute([
+                    'order_id' => $orderId,
+                    'provider' => 'VNPAY',
+                    'reference' => $paymentReference,
+                    'amount' => $total,
+                    'status' => 'pending',
                 ]);
             }
 
@@ -258,7 +350,7 @@ final class Order
     public function findAllForCustomer(string $userId): array
     {
         $statement = $this->connection->prepare(
-            'SELECT o.id, o.order_number, o.total_vnd, o.status, o.created_at,'
+            'SELECT o.id, o.order_number, o.total_vnd, o.status, o.payment_status, o.created_at,'
             . ' (SELECT COALESCE(SUM(oi.quantity), 0) FROM order_items oi WHERE oi.order_id = o.id) AS item_count'
             . ' FROM orders o WHERE o.user_id = :user_id ORDER BY o.created_at DESC, o.id DESC'
         );
@@ -271,7 +363,8 @@ final class Order
     {
         $statement = $this->connection->prepare(
             'SELECT o.id, o.order_number, o.recipient_name, o.phone, o.shipping_address, o.subtotal_vnd,'
-            . ' o.shipping_fee_vnd, o.total_vnd, o.payment_method, o.status, o.created_at,'
+            . ' o.shipping_fee_vnd, o.discount_vnd, o.coupon_code, o.total_vnd, o.payment_method,'
+            . ' o.payment_status, o.status, o.created_at,'
             . ' u.name AS customer_name, u.email AS customer_email'
             . ' FROM orders o INNER JOIN users u ON u.id = o.user_id'
             . ' WHERE o.id = :id AND o.user_id = :user_id LIMIT 1'

@@ -5,3 +5,4 @@
 /public/uploads/*
 !/public/uploads/.gitkeep
 !.gitkeep
+/database/backups/*.sql
