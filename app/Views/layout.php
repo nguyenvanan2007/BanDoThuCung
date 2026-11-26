@@ -65,14 +65,84 @@
         <?= $content ?? '' ?>
     </main>
     <footer class="site-footer">
-        <div class="footer-brand">
-            <strong>TPet</strong>
-            <span>Cửa hàng thức ăn cho thú cưng Địa chỉ: 123 Nguyễn Văn A, Hà Nội </span>
+        <section class="footer-highlights" aria-label="Thông tin mua sắm">
+            <div class="footer-container footer-highlight-grid">
+                <div class="footer-highlight">
+                    <span class="footer-highlight-icon" aria-hidden="true">🐾</span>
+                    <span>
+                        <strong>Thức ăn cho chó mèo</strong>
+                        <small>Chọn theo thú cưng</small>
+                    </span>
+                </div>
+                <div class="footer-highlight">
+                    <span class="footer-highlight-icon" aria-hidden="true">⌕</span>
+                    <span>
+                        <strong>Tìm sản phẩm dễ dàng</strong>
+                        <small>Lọc theo tên, loại và giá</small>
+                    </span>
+                </div>
+                <div class="footer-highlight">
+                    <span class="footer-highlight-icon" aria-hidden="true">💳</span>
+                    <span>
+                        <strong>Thanh toán linh hoạt</strong>
+                        <small>COD hoặc VNPAY</small>
+                    </span>
+                </div>
+                <div class="footer-highlight">
+                    <span class="footer-highlight-icon" aria-hidden="true">📦</span>
+                    <span>
+                        <strong>Quản lý đơn hàng</strong>
+                        <small>Xem đơn trong tài khoản</small>
+                    </span>
+                </div>
+            </div>
+        </section>
+
+        <div class="footer-main">
+            <div class="footer-container footer-grid">
+                <section class="footer-column footer-company">
+                    <a class="footer-logo" href="/">TPet</a>
+                    <p>Cửa hàng thức ăn cho chó và mèo.</p>
+                    <address class="footer-contact">
+                        <span>Địa chỉ: 123 Nguyễn Văn A, Hà Nội</span>
+                        <a href="tel:0977365366">SĐT: 0977 365 366</a>
+                        <a href="mailto:abc@gmail.com">Email: abc@gmail.com</a>
+                    </address>
+                </section>
+
+                <nav class="footer-column" aria-label="Mua sắm">
+                    <h2>Mua sắm</h2>
+                    <a href="/">Tất cả sản phẩm</a>
+                    <a href="/?species=dog#catalog">Thức ăn cho chó</a>
+                    <a href="/?species=cat#catalog">Thức ăn cho mèo</a>
+                    <a href="/cart">Giỏ hàng</a>
+                </nav>
+
+                <nav class="footer-column" aria-label="Hỗ trợ khách hàng">
+                    <h2>Hỗ trợ khách hàng</h2>
+                    <a href="/account">Tài khoản</a>
+                    <a href="/orders">Đơn hàng</a>
+                    <a href="/login">Đăng nhập</a>
+                    <a href="/register">Đăng ký</a>
+                </nav>
+
+                <section class="footer-column">
+                    <h2>Thanh toán</h2>
+                    <p>Chọn phương thức thanh toán khi đặt hàng:</p>
+                    <div class="footer-payment-options" aria-label="COD và VNPAY">
+                        <span>COD</span>
+                        <span>VNPAY</span>
+                    </div>
+                </section>
+            </div>
         </div>
-        <address class="footer-contact">
-            <a href="tel:0977365366">SĐT: 0977 365 366</a>
-            <a href="mailto:abc@gmail.com">Email: abc@gmail.com</a>
-        </address>
+
+        <div class="footer-bottom">
+            <div class="footer-container footer-bottom-content">
+                <span>© <?= date('Y') ?> TPet</span>
+                <span>Thức ăn dành cho chó và mèo</span>
+            </div>
+        </div>
     </footer>
 </body>
 </html>

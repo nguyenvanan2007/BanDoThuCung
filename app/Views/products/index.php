@@ -145,7 +145,14 @@
                                 <input type="hidden" name="_csrf_token" value="<?= e(csrf_token()) ?>">
                                 <input type="hidden" name="product_id" value="<?= e($product['id']) ?>">
                                 <input type="hidden" name="quantity" value="1">
-                                <button class="button product-buy-button" type="submit">Thêm vào giỏ</button>
+                                <button class="button product-buy-button" type="submit">
+                                    <svg class="cart-button-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M3 4h2l2.2 11.1a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 1.9-1.5L22 8H6" />
+                                        <circle cx="10" cy="20" r="1" />
+                                        <circle cx="18" cy="20" r="1" />
+                                    </svg>
+                                    Thêm vào giỏ
+                                </button>
                             </form>
                         <?php elseif (!$product['isDemo'] && $product['stockQuantity'] > 0 && $product['hasVariants']): ?>
                             <a class="button product-buy-button" href="/products/<?= e($product['id']) ?>">Chọn quy cách</a>

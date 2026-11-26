@@ -69,7 +69,14 @@
                     value="1"
                     required
                 >
-                <button class="button" type="submit">Thêm vào giỏ hàng</button>
+                <button class="button cart-action-button" type="submit">
+                    <svg class="cart-button-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M3 4h2l2.2 11.1a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 1.9-1.5L22 8H6" />
+                        <circle cx="10" cy="20" r="1" />
+                        <circle cx="18" cy="20" r="1" />
+                    </svg>
+                    Thêm vào giỏ hàng
+                </button>
             </form>
         <?php else: ?>
             <p class="stock-warning">Sản phẩm hiện đã hết hàng.</p>
