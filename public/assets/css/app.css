@@ -232,6 +232,73 @@ h1 {
     box-shadow: 0 16px 36px rgb(70 74 55 / 12%);
 }
 
+.catalog-search {
+    max-width: 1200px;
+    margin: 1.25rem auto 0;
+    padding: 0 2rem;
+}
+
+.catalog-search-form {
+    display: grid;
+    grid-template-columns: minmax(220px, 2fr) minmax(120px, 1fr) minmax(140px, 1.3fr) minmax(135px, 1.2fr) minmax(125px, 1.1fr) auto auto;
+    align-items: end;
+    gap: 0.75rem;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 0.85rem;
+    background: var(--panel);
+    box-shadow: var(--shadow-soft);
+}
+
+.catalog-filter-field {
+    display: grid;
+    min-width: 0;
+    gap: 0.35rem;
+}
+
+.catalog-filter-field span {
+    color: #52635a;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.catalog-filter-field input,
+.catalog-filter-field select {
+    width: 100%;
+    min-width: 0;
+    min-height: 2.8rem;
+    padding: 0.6rem 0.7rem;
+    border: 1px solid #d5dcd5;
+    border-radius: 0.45rem;
+    color: inherit;
+    background: #fff;
+    font: inherit;
+}
+
+.catalog-filter-field input:focus,
+.catalog-filter-field select:focus {
+    outline: 2px solid #91b9a2;
+    outline-offset: 1px;
+}
+
+.catalog-search-button {
+    flex: 0 0 auto;
+    margin-top: 0;
+    padding: 0.75rem 0.9rem;
+    cursor: pointer;
+    font: inherit;
+    white-space: nowrap;
+}
+
+.catalog-reset-link {
+    align-self: center;
+    color: var(--primary);
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
 .page-heading,
 .catalog-layout,
 .product-detail {
@@ -357,10 +424,6 @@ h1 {
 }
 
 .catalog-layout {
-    display: grid;
-    grid-template-columns: 260px minmax(0, 1fr);
-    align-items: start;
-    gap: 2rem;
     padding-bottom: 4rem;
 }
 
@@ -1213,6 +1276,24 @@ h1 {
     margin: 0;
 }
 
+@media (max-width: 1050px) {
+    .catalog-search-form {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .catalog-filter-search {
+        grid-column: 1 / -1;
+    }
+
+    .catalog-search-button {
+        width: 100%;
+    }
+
+    .catalog-reset-link {
+        text-align: center;
+    }
+}
+
 @media (max-width: 700px) {
     .site-header {
         position: static;
@@ -1229,6 +1310,19 @@ h1 {
 
     .home-banner img {
         border-radius: 1rem;
+    }
+
+    .catalog-search {
+        padding: 0 1.25rem;
+    }
+
+    .catalog-search-form {
+        gap: 0.5rem;
+        padding: 0.75rem;
+    }
+
+    .catalog-search-button {
+        padding: 0.75rem 0.85rem;
     }
 
     .site-tagline {

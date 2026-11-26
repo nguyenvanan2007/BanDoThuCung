@@ -7,13 +7,66 @@
     >
 </section>
 
+<section class="catalog-search" aria-label="Tìm kiếm và lọc sản phẩm">
+    <form class="catalog-search-form" method="get" action="/">
+        <label class="catalog-filter-field catalog-filter-search" for="catalog-search">
+            <span>Tìm sản phẩm</span>
+            <input
+                id="catalog-search"
+                name="q"
+                type="search"
+                value="<?= e($filters['q']) ?>"
+                placeholder="Tên hoặc mã sản phẩm"
+            >
+        </label>
+
+        <label class="catalog-filter-field" for="catalog-species">
+            <span>Dành cho</span>
+            <select id="catalog-species" name="species">
+                <option value="">Chó và mèo</option>
+                <option value="dog" <?= $filters['species'] === 'dog' ? 'selected' : '' ?>>Chó</option>
+                <option value="cat" <?= $filters['species'] === 'cat' ? 'selected' : '' ?>>Mèo</option>
+            </select>
+        </label>
+
+        <label class="catalog-filter-field" for="catalog-category">
+            <span>Danh mục</span>
+            <select id="catalog-category" name="category">
+                <option value="">Tất cả loại</option>
+                <?php foreach ($categories as $category): ?>
+                    <option value="<?= e($category['slug']) ?>" <?= $filters['category'] === $category['slug'] ? 'selected' : '' ?>>
+                        <?= e($category['name']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </label>
+
+        <label class="catalog-filter-field" for="catalog-price">
+            <span><?= $isDemoMode ? 'Khoảng giá minh họa' : 'Khoảng giá' ?></span>
+            <select id="catalog-price" name="price">
+                <option value="">Tất cả mức giá</option>
+                <option value="under_100k" <?= $filters['priceRange'] === 'under_100k' ? 'selected' : '' ?>>Dưới 100.000đ</option>
+                <option value="100k_200k" <?= $filters['priceRange'] === '100k_200k' ? 'selected' : '' ?>>100.000đ – 200.000đ</option>
+                <option value="over_200k" <?= $filters['priceRange'] === 'over_200k' ? 'selected' : '' ?>>Trên 200.000đ</option>
+            </select>
+        </label>
+
+        <label class="catalog-filter-field" for="catalog-sort">
+            <span>Sắp xếp</span>
+            <select id="catalog-sort" name="sort">
+                <option value="">Tên sản phẩm</option>
+                <option value="price_asc" <?= $filters['sort'] === 'price_asc' ? 'selected' : '' ?>>Giá thấp đến cao</option>
+                <option value="price_desc" <?= $filters['sort'] === 'price_desc' ? 'selected' : '' ?>>Giá cao đến thấp</option>
+            </select>
+        </label>
+
+        <button class="button catalog-search-button" type="submit">Áp dụng lọc</button>
+        <a class="catalog-reset-link" href="/">Xóa lọc</a>
+    </form>
+</section>
+
 <section class="page-heading" id="catalog">
     <h1>Thức ăn cho chó và mèo</h1>
-    <p class="page-description">
-        <?= $isDemoMode
-            ? 'Tìm kiếm và lọc các sản phẩm minh họa theo nhu cầu.'
-            : 'Tìm kiếm và lọc thức ăn cho chó mèo theo nhu cầu.' ?>
-    </p>
 </section>
 
 <section class="shop-categories" aria-labelledby="shop-categories-title">
@@ -42,47 +95,6 @@
 </section>
 
 <section class="catalog-layout" aria-label="Danh mục sản phẩm">
-    <form class="filter-panel" method="get" action="/">
-        <h2>Lọc sản phẩm</h2>
-        <label for="search">Tìm theo tên hoặc mã sản phẩm</label>
-        <input id="search" name="q" type="search" value="<?= e($filters['q']) ?>" placeholder="Ví dụ: thức ăn khô">
-
-        <label for="species">Dành cho</label>
-        <select id="species" name="species">
-            <option value="">Chó và mèo</option>
-            <option value="dog" <?= $filters['species'] === 'dog' ? 'selected' : '' ?>>Chó</option>
-            <option value="cat" <?= $filters['species'] === 'cat' ? 'selected' : '' ?>>Mèo</option>
-        </select>
-
-        <label for="category">Danh mục</label>
-        <select id="category" name="category">
-            <option value="">Tất cả loại</option>
-            <?php foreach ($categories as $category): ?>
-                <option value="<?= e($category['slug']) ?>" <?= $filters['category'] === $category['slug'] ? 'selected' : '' ?>>
-                    <?= e($category['name']) ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-
-        <label for="price"><?= $isDemoMode ? 'Khoảng giá minh họa' : 'Khoảng giá' ?></label>
-        <select id="price" name="price">
-            <option value="">Tất cả mức giá</option>
-            <option value="under_100k" <?= $filters['priceRange'] === 'under_100k' ? 'selected' : '' ?>>Dưới 100.000đ</option>
-            <option value="100k_200k" <?= $filters['priceRange'] === '100k_200k' ? 'selected' : '' ?>>100.000đ – 200.000đ</option>
-            <option value="over_200k" <?= $filters['priceRange'] === 'over_200k' ? 'selected' : '' ?>>Trên 200.000đ</option>
-        </select>
-
-        <label for="sort">Sắp xếp</label>
-        <select id="sort" name="sort">
-            <option value="">Tên sản phẩm</option>
-            <option value="price_asc" <?= $filters['sort'] === 'price_asc' ? 'selected' : '' ?>>Giá thấp đến cao</option>
-            <option value="price_desc" <?= $filters['sort'] === 'price_desc' ? 'selected' : '' ?>>Giá cao đến thấp</option>
-        </select>
-
-        <button class="button filter-button" type="submit">Áp dụng bộ lọc</button>
-        <a class="reset-link" href="/">Xóa bộ lọc</a>
-    </form>
-
     <div class="catalog-results">
         <p class="result-count">
             <?= e($productCount) ?> <?= $isDemoMode ? 'sản phẩm minh họa' : 'sản phẩm' ?>
