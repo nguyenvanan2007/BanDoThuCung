@@ -17,8 +17,8 @@
     <?php if ($products === []): ?>
         <p>Chưa có sản phẩm.</p>
     <?php else: ?>
-        <div class="orders-table-wrap">
-            <table class="orders-table admin-table">
+        <div class="orders-table-wrap admin-inventory-table-wrap">
+            <table class="orders-table admin-table admin-inventory-table admin-inventory-current-table">
                 <thead>
                     <tr>
                         <th>Sản phẩm / SKU</th>
@@ -33,8 +33,17 @@
                             . ($product['variantName'] === null ? '' : ' · ' . $product['variantName']); ?>
                         <tr>
                             <td>
-                                <strong><?= e($label) ?></strong>
-                                <small><?= e($product['variantSku'] ?? $product['productSku']) ?></small>
+                                <div class="admin-inventory-product">
+                                    <?php if ($product['imagePath'] !== null): ?>
+                                        <img class="admin-product-thumb" src="<?= e($product['imagePath']) ?>" alt="" loading="lazy" decoding="async">
+                                    <?php else: ?>
+                                        <span class="admin-inventory-no-image">Chưa có ảnh</span>
+                                    <?php endif; ?>
+                                    <div class="admin-inventory-product-details">
+                                        <strong><?= e($label) ?></strong>
+                                        <small><?= e($product['variantSku'] ?? $product['productSku']) ?></small>
+                                    </div>
+                                </div>
                             </td>
                             <td><?= e($product['stockQuantity']) ?></td>
                             <td>
@@ -82,8 +91,8 @@
     <?php if ($movements === []): ?>
         <p>Chưa có thay đổi tồn kho.</p>
     <?php else: ?>
-        <div class="orders-table-wrap">
-            <table class="orders-table admin-table">
+        <div class="orders-table-wrap admin-inventory-table-wrap">
+            <table class="orders-table admin-table admin-inventory-table admin-inventory-history-table">
                 <thead>
                     <tr>
                         <th>Thời gian</th>

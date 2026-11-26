@@ -55,24 +55,21 @@
             <?php endif; ?>
             <?php if (isset($_SESSION['user']) && is_array($_SESSION['user'])): ?>
                 <?php if (($_SESSION['user']['role'] ?? '') === 'admin'): ?>
-                    <a href="/admin">Quản trị</a>
-                    <a href="/admin/products">Sản phẩm</a>
-                    <a href="/admin/categories">Danh mục</a>
-                    <a href="/admin/users">Tài khoản</a>
                     <a
-                        class="nav-orders-link"
-                        href="/admin/orders"
+                        class="nav-admin-link"
+                        href="/admin"
                         aria-label="<?= e($pendingOrderCount > 0
-                            ? 'Đơn hàng, ' . $pendingOrderCount . ' đơn chờ xác nhận'
-                            : 'Đơn hàng') ?>"
+                            ? 'Quản trị, ' . $pendingOrderCount . ' đơn chờ xác nhận'
+                            : 'Quản trị') ?>"
                     >
-                        Đơn hàng
+                        Quản trị
                         <?php if ($pendingOrderCount > 0): ?>
                             <span class="nav-notification-badge" aria-hidden="true">
                                 <?= e($pendingOrderCount > 99 ? '99+' : (string) $pendingOrderCount) ?>
                             </span>
                         <?php endif; ?>
                     </a>
+                    <a href="/admin/categories">Danh mục</a>
                     <a href="/admin/inventory">Kho</a>
                     <a href="/admin/coupons">Mã giảm giá</a>
                     <a href="/admin/reports">Báo cáo</a>
@@ -80,20 +77,30 @@
                     <a href="/account">Tài khoản</a>
                     <a href="/orders">Đơn hàng</a>
                 <?php endif; ?>
-                <form class="logout-form" method="post" action="/logout">
-                    <input type="hidden" name="_csrf_token" value="<?= e(csrf_token()) ?>">
-                    <button class="nav-button" type="submit">Đăng xuất</button>
-                </form>
             <?php else: ?>
                 <a href="/login">Đăng nhập</a>
                 <a href="/register">Đăng ký</a>
             <?php endif; ?>
         </nav>
-        <?php if ($headerAccountName !== ''): ?>
-            <p class="site-tagline site-account-name">Xin chào, <?= e($headerAccountName) ?></p>
-        <?php else: ?>
-            <p class="site-tagline">Thức ăn cho chó và mèo</p>
-        <?php endif; ?>
+        <div class="header-account">
+            <?php if ($headerAccountName !== ''): ?>
+                <p class="site-tagline site-account-name">Xin chào, <?= e($headerAccountName) ?></p>
+            <?php else: ?>
+                <p class="site-tagline">Thức ăn cho chó và mèo</p>
+            <?php endif; ?>
+            <?php if (is_array($headerUser)): ?>
+                <form class="header-logout-form" method="post" action="/logout">
+                    <input type="hidden" name="_csrf_token" value="<?= e(csrf_token()) ?>">
+                    <button class="header-logout-button" type="submit" aria-label="Đăng xuất" title="Đăng xuất">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h5" />
+                            <path d="M17 16l4-4-4-4" />
+                            <path d="M21 12H9" />
+                        </svg>
+                    </button>
+                </form>
+            <?php endif; ?>
+        </div>
     </header>
     <main>
         <?php $flash = take_flash(); ?>

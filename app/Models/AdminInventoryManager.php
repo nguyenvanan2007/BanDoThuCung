@@ -18,7 +18,8 @@ final class AdminInventoryManager
     {
         $statement = $this->connection->query(
             'SELECT p.id AS product_id, p.sku AS product_sku, p.name AS product_name,'
-            . ' p.stock_quantity AS product_stock, p.low_stock_threshold, p.is_active AS product_active,'
+            . ' p.image_path AS product_image_path, p.stock_quantity AS product_stock,'
+            . ' p.low_stock_threshold, p.is_active AS product_active,'
             . ' v.id AS variant_id, v.sku AS variant_sku, v.name AS variant_name,'
             . ' v.stock_quantity AS variant_stock, v.is_active AS variant_active'
             . ' FROM products p LEFT JOIN product_variants v'
@@ -34,6 +35,7 @@ final class AdminInventoryManager
                     'productId' => (string) $row['product_id'],
                     'productSku' => (string) $row['product_sku'],
                     'productName' => (string) $row['product_name'],
+                    'imagePath' => safe_product_image_path($row['product_image_path'] ?? null),
                     'variantId' => $hasVariant ? (string) $row['variant_id'] : null,
                     'variantSku' => $hasVariant ? (string) $row['variant_sku'] : null,
                     'variantName' => $hasVariant ? (string) $row['variant_name'] : null,
