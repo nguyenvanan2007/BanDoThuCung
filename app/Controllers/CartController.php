@@ -20,6 +20,8 @@ final class CartController extends Controller
         $total = 0;
         $cartErrors = [];
         $hasDemoItems = false;
+        $cartProductIds = [];
+        $cartSpecies = [];
 
         foreach ($cart as $cartKey => $quantity) {
             $parts = $this->parseCartKey((string) $cartKey);
@@ -27,6 +29,7 @@ final class CartController extends Controller
                 continue;
             }
             [$productId, $variantId] = $parts;
+            $cartProductIds[$productId] = true;
             $product = $this->catalog->findById((string) $productId);
             if ($product === null) {
                 $cartErrors[] = 'Một sản phẩm trong giỏ không còn bán; hãy xóa sản phẩm đó trước khi thanh toán.';
@@ -41,6 +44,7 @@ final class CartController extends Controller
                 continue;
             }
 
+            $cartSpecies[$product['species']] = true;
             $variant = $variantId === null ? null : $this->catalog->findVariant((string) $productId, $variantId);
             if (($product['variants'] !== [] && $variant === null) || ($variantId !== null && $variant === null)) {
                 $cartErrors[] = 'Một biến thể trong giỏ không còn bán; hãy xóa sản phẩm đó trước khi thanh toán.';
@@ -84,9 +88,30 @@ final class CartController extends Controller
             ];
         }
 
+        $recommendations = $this->catalog->search([
+            'q' => '',
+            'species' => '',
+            'category' => '',
+            'priceRange' => '',
+            'sort' => '',
+        ]);
+        $recommendations = array_values(array_filter(
+            $recommendations,
+            static fn (array $product): bool => !isset($cartProductIds[$product['id']])
+                && $product['stockQuantity'] > 0
+        ));
+        usort($recommendations, static function (array $left, array $right) use ($cartSpecies): int {
+            $leftSpeciesRank = isset($cartSpecies[$left['species']]) ? 0 : 1;
+            $rightSpeciesRank = isset($cartSpecies[$right['species']]) ? 0 : 1;
+
+            return ($leftSpeciesRank <=> $rightSpeciesRank)
+                ?: strcmp(mb_strtolower($left['name']), mb_strtolower($right['name']));
+        });
+
         $this->render('cart/index', [
             'title' => 'Giỏ hàng | TPet',
             'items' => $items,
+            'recommendedProducts' => array_slice($recommendations, 0, 4),
             'total' => $total,
             'cartErrors' => array_values(array_unique($cartErrors)),
             'hasDemoItems' => $hasDemoItems,
@@ -97,6 +122,11 @@ final class CartController extends Controller
     public function add(): void
     {
         if (!$this->hasValidCsrfToken()) {
+            if ($this->expectsJsonResponse()) {
+                $this->jsonResponse(['message' => 'Phiên gửi biểu mẫu không hợp lệ. Hãy tải lại trang và thử lại.'], 403);
+                return;
+            }
+
             $this->showForbidden();
             return;
         }
@@ -107,16 +137,20 @@ final class CartController extends Controller
         $product = $productId === null ? null : $this->catalog->findById((string) $productId);
 
         if ($product === null) {
-            $this->flashError('Sản phẩm không tồn tại hoặc đã ngừng bán.');
-            $this->redirect('/');
+            $this->respondAddError('Sản phẩm không tồn tại hoặc đã ngừng bán.', 404, '/');
+            return;
         }
 
         $variant = $variantId === null
             ? null
             : $this->catalog->findVariant((string) $productId, (string) $variantId);
         if (($product['variants'] !== [] && $variant === null) || ($variantId !== null && $variant === null)) {
-            $this->flashError('Vui lòng chọn một biến thể đang được bán.');
-            $this->redirect('/products/' . $productId);
+            $this->respondAddError(
+                'Vui lòng chọn một biến thể đang được bán.',
+                422,
+                '/products/' . $productId
+            );
+            return;
         }
 
         $cartKey = $this->makeCartKey((string) $productId, $variantId === null ? null : (string) $variantId);
@@ -128,15 +162,28 @@ final class CartController extends Controller
         if ($requestedQuantity < 1
             || $stockQuantity < 1
             || $requestedQuantity > $stockQuantity - $currentQuantity) {
-            $this->flashError('Số lượng yêu cầu vượt quá tồn kho hiện có.');
-            $this->redirect('/products/' . $productId);
+            $this->respondAddError(
+                'Số lượng yêu cầu vượt quá tồn kho hiện có.',
+                422,
+                '/products/' . $productId
+            );
+            return;
         }
 
         $currentCart[$cartKey] = $currentQuantity + $requestedQuantity;
         $_SESSION['cart_items'] = $currentCart;
+        $message = 'Đã thêm sản phẩm vào giỏ hàng.';
+        if ($this->expectsJsonResponse()) {
+            $this->jsonResponse([
+                'message' => $message,
+                'cartCount' => array_sum($currentCart),
+            ]);
+            return;
+        }
+
         $_SESSION['_flash'] = [
             'type' => 'success',
-            'message' => 'Đã thêm sản phẩm vào giỏ hàng.',
+            'message' => $message,
         ];
         $this->redirect('/cart');
     }
@@ -144,6 +191,11 @@ final class CartController extends Controller
     public function update(): void
     {
         if (!$this->hasValidCsrfToken()) {
+            if ($this->expectsJsonResponse()) {
+                $this->jsonResponse(['message' => 'Phiên gửi biểu mẫu không hợp lệ. Hãy tải lại trang và thử lại.'], 403);
+                return;
+            }
+
             $this->showForbidden();
             return;
         }
@@ -153,8 +205,8 @@ final class CartController extends Controller
         $cart = $this->cartItems();
 
         if ($cartKey === null || !array_key_exists($cartKey, $cart)) {
-            $this->flashError('Sản phẩm không có trong giỏ hàng.');
-            $this->redirect('/cart');
+            $this->respondUpdateError('Sản phẩm không có trong giỏ hàng.', 404);
+            return;
         }
 
         $parts = $this->parseCartKey($cartKey);
@@ -166,12 +218,25 @@ final class CartController extends Controller
         if ($product === null || ($parts[1] !== null && $variant === null)
             || ($product['variants'] !== [] && $variant === null)
             || $quantity === null || $quantity < 1 || $quantity > $stockQuantity) {
-            $this->flashError('Số lượng không hợp lệ hoặc vượt quá tồn kho hiện có.');
-            $this->redirect('/cart');
+            $this->respondUpdateError('Số lượng không hợp lệ hoặc vượt quá tồn kho hiện có.', 422);
+            return;
         }
 
         $cart[$cartKey] = $quantity;
         $_SESSION['cart_items'] = $cart;
+        if ($this->expectsJsonResponse()) {
+            $price = $variant['price'] ?? $product['price'];
+            $subtotal = $price <= intdiv(PHP_INT_MAX, $quantity)
+                ? $price * $quantity
+                : null;
+            $this->jsonResponse([
+                'quantity' => $quantity,
+                'cartCount' => array_sum($cart),
+                'subtotal' => $subtotal,
+            ]);
+            return;
+        }
+
         $_SESSION['_flash'] = [
             'type' => 'success',
             'message' => 'Đã cập nhật giỏ hàng.',
@@ -259,6 +324,45 @@ final class CartController extends Controller
     private function hasValidCsrfToken(): bool
     {
         return valid_csrf_token($_POST['_csrf_token'] ?? null);
+    }
+
+    private function expectsJsonResponse(): bool
+    {
+        $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
+        $requestedWith = $_SERVER['HTTP_X_REQUESTED_WITH'] ?? '';
+
+        return (is_string($accept) && str_contains(strtolower($accept), 'application/json'))
+            || (is_string($requestedWith) && strtolower($requestedWith) === 'xmlhttprequest');
+    }
+
+    private function jsonResponse(array $payload, int $statusCode = 200): void
+    {
+        http_response_code($statusCode);
+        header('Content-Type: application/json; charset=utf-8');
+        header('Cache-Control: no-store');
+        echo json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+    }
+
+    private function respondAddError(string $message, int $statusCode, string $fallback): void
+    {
+        if ($this->expectsJsonResponse()) {
+            $this->jsonResponse(['message' => $message], $statusCode);
+            return;
+        }
+
+        $this->flashError($message);
+        $this->redirect($fallback);
+    }
+
+    private function respondUpdateError(string $message, int $statusCode): void
+    {
+        if ($this->expectsJsonResponse()) {
+            $this->jsonResponse(['message' => $message], $statusCode);
+            return;
+        }
+
+        $this->flashError($message);
+        $this->redirect('/cart');
     }
 
     private function showForbidden(): void

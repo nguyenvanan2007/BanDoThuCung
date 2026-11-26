@@ -110,6 +110,14 @@
         <?php else: ?>
             <div class="product-grid">
                 <?php foreach ($products as $product): ?>
+                    <?php
+                    $cartItemsForProduct = $_SESSION['cart_items'] ?? [];
+                    $quantityInCart = is_array($cartItemsForProduct)
+                        ? ($cartItemsForProduct[$product['id']] ?? 0)
+                        : 0;
+                    $quantityInCart = is_int($quantityInCart) && $quantityInCart > 0 ? $quantityInCart : 0;
+                    $remainingCartStock = max(0, $product['stockQuantity'] - $quantityInCart);
+                    ?>
                     <article class="product-card">
                         <a class="product-card-link" href="/products/<?= e($product['id']) ?>">
                             <div class="product-art">
@@ -140,12 +148,22 @@
                                 </div>
                             </div>
                         </a>
-                        <?php if (!$product['isDemo'] && $product['stockQuantity'] > 0 && !$product['hasVariants']): ?>
+                        <?php if (!$product['isDemo'] && $remainingCartStock > 0 && !$product['hasVariants']): ?>
                             <form class="product-buy-form" method="post" action="/cart/add">
                                 <input type="hidden" name="_csrf_token" value="<?= e(csrf_token()) ?>">
                                 <input type="hidden" name="product_id" value="<?= e($product['id']) ?>">
                                 <input type="hidden" name="quantity" value="1">
-                                <button class="button product-buy-button" type="submit">
+                                <button
+                                    class="button product-buy-button"
+                                    type="submit"
+                                    data-quick-cart-trigger
+                                    data-product-id="<?= e($product['id']) ?>"
+                                    data-product-name="<?= e($product['name']) ?>"
+                                    data-product-image="<?= e($product['imagePath'] ?? '') ?>"
+                                    data-product-icon="<?= e($product['icon']) ?>"
+                                    data-product-price="<?= e(format_vnd($product['price'])) ?>"
+                                    data-product-stock="<?= e($remainingCartStock) ?>"
+                                >
                                     <svg class="cart-button-icon" viewBox="0 0 24 24" aria-hidden="true">
                                         <path d="M3 4h2l2.2 11.1a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 1.9-1.5L22 8H6" />
                                         <circle cx="10" cy="20" r="1" />
@@ -154,6 +172,8 @@
                                     Thêm vào giỏ
                                 </button>
                             </form>
+                        <?php elseif (!$product['isDemo'] && $product['stockQuantity'] > 0 && !$product['hasVariants']): ?>
+                            <button class="button product-buy-button" type="button" disabled>Đã thêm đủ số lượng tồn kho</button>
                         <?php elseif (!$product['isDemo'] && $product['stockQuantity'] > 0 && $product['hasVariants']): ?>
                             <a class="button product-buy-button" href="/products/<?= e($product['id']) ?>">Chọn quy cách</a>
                         <?php elseif (!$product['isDemo']): ?>

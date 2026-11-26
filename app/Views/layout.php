@@ -13,6 +13,19 @@
     $pendingOrderCount = isset($pendingOrderCount) && is_int($pendingOrderCount)
         ? max(0, $pendingOrderCount)
         : 0;
+    $cartItemCount = 0;
+    $cartItemsForBadge = $_SESSION['cart_items'] ?? [];
+    if (is_array($cartItemsForBadge)) {
+        foreach ($cartItemsForBadge as $cartKey => $quantity) {
+            if (preg_match('/\A[1-9][0-9]*(?::v[1-9][0-9]*)?\z/', (string) $cartKey) === 1
+                && is_int($quantity)
+                && $quantity > 0) {
+                $cartItemCount = $quantity > PHP_INT_MAX - $cartItemCount
+                    ? PHP_INT_MAX
+                    : $cartItemCount + $quantity;
+            }
+        }
+    }
     $headerAccountName = is_array($headerUser) && is_string($headerUser['name'] ?? null)
         ? trim($headerUser['name'])
         : '';
@@ -27,7 +40,18 @@
         <nav class="site-nav" aria-label="Điều hướng chính">
             <a href="/">Trang chủ</a>
             <?php if (!is_array($headerUser) || ($headerUser['role'] ?? '') !== 'admin'): ?>
-                <a href="/cart">Giỏ hàng</a>
+                <a
+                    class="nav-cart-link"
+                    href="/cart"
+                    aria-label="<?= e($cartItemCount > 0
+                        ? 'Giỏ hàng, ' . $cartItemCount . ' sản phẩm'
+                        : 'Giỏ hàng') ?>"
+                >
+                    Giỏ hàng
+                    <span class="cart-count-badge" data-cart-count aria-hidden="true" <?= $cartItemCount > 0 ? '' : 'hidden' ?>>
+                        <?= e($cartItemCount > 99 ? '99+' : (string) $cartItemCount) ?>
+                    </span>
+                </a>
             <?php endif; ?>
             <?php if (isset($_SESSION['user']) && is_array($_SESSION['user'])): ?>
                 <?php if (($_SESSION['user']['role'] ?? '') === 'admin'): ?>
@@ -80,6 +104,44 @@
         <?php endif; ?>
         <?= $content ?? '' ?>
     </main>
+    <dialog class="quick-cart-dialog" id="quick-cart-dialog" aria-labelledby="quick-cart-title">
+        <div class="quick-cart-panel">
+            <button class="quick-cart-close" type="button" data-quick-cart-close aria-label="Đóng">×</button>
+            <h2 id="quick-cart-title">Thêm vào giỏ hàng</h2>
+            <div class="quick-cart-product">
+                <div class="quick-cart-image">
+                    <img data-quick-cart-image alt="" hidden>
+                    <span class="quick-cart-image-icon" data-quick-cart-icon aria-hidden="true" hidden></span>
+                </div>
+                <div class="quick-cart-product-copy">
+                    <strong data-quick-cart-name></strong>
+                    <p data-quick-cart-price></p>
+                </div>
+            </div>
+            <p class="quick-cart-error" data-quick-cart-error role="alert" hidden></p>
+            <form class="quick-cart-form" data-quick-cart-form method="post" action="/cart/add">
+                <input type="hidden" name="_csrf_token" value="<?= e(csrf_token()) ?>">
+                <input type="hidden" name="product_id">
+                <div class="quick-cart-quantity-row">
+                    <label for="quick-cart-quantity">Số lượng</label>
+                    <div class="quick-cart-stepper">
+                        <button type="button" data-quantity-decrease aria-label="Giảm số lượng">−</button>
+                        <input id="quick-cart-quantity" name="quantity" type="number" min="1" value="1" required>
+                        <button type="button" data-quantity-increase aria-label="Tăng số lượng">+</button>
+                    </div>
+                </div>
+                <button class="button quick-cart-submit" type="submit">
+                    <svg class="cart-button-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M3 4h2l2.2 11.1a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 1.9-1.5L22 8H6" />
+                        <circle cx="10" cy="20" r="1" />
+                        <circle cx="18" cy="20" r="1" />
+                    </svg>
+                    Thêm vào giỏ hàng
+                </button>
+            </form>
+        </div>
+    </dialog>
+    <p class="cart-toast" id="cart-toast" role="status" aria-live="polite" hidden></p>
     <footer class="site-footer">
         <section class="footer-highlights" aria-label="Thông tin mua sắm">
             <div class="footer-container footer-highlight-grid">
@@ -160,5 +222,6 @@
             </div>
         </div>
     </footer>
+    <script src="/assets/js/cart.js" defer></script>
 </body>
 </html>

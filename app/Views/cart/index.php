@@ -59,16 +59,33 @@
                             <input type="hidden" name="_csrf_token" value="<?= e(csrf_token()) ?>">
                             <input type="hidden" name="cart_key" value="<?= e($item['id']) ?>">
                             <label for="quantity-<?= e($item['id']) ?>">Số lượng</label>
-                            <input
-                                id="quantity-<?= e($item['id']) ?>"
-                                name="quantity"
-                                type="number"
-                                min="1"
-                                max="<?= e($item['stockQuantity']) ?>"
-                                value="<?= e($item['quantity']) ?>"
-                                required
-                            >
+                            <div class="cart-quantity-stepper">
+                                <button
+                                    class="cart-quantity-control"
+                                    type="button"
+                                    data-cart-quantity-decrease
+                                    aria-label="Giảm số lượng"
+                                    <?= $item['quantity'] <= 1 ? 'disabled' : '' ?>
+                                >−</button>
+                                <input
+                                    id="quantity-<?= e($item['id']) ?>"
+                                    name="quantity"
+                                    type="number"
+                                    min="1"
+                                    max="<?= e($item['stockQuantity']) ?>"
+                                    value="<?= e($item['quantity']) ?>"
+                                    required
+                                >
+                                <button
+                                    class="cart-quantity-control"
+                                    type="button"
+                                    data-cart-quantity-increase
+                                    aria-label="Tăng số lượng"
+                                    <?= $item['quantity'] >= $item['stockQuantity'] ? 'disabled' : '' ?>
+                                >+</button>
+                            </div>
                             <button class="text-button" type="submit">Cập nhật</button>
+                            <p class="cart-update-error" data-cart-update-error role="alert" hidden></p>
                         </form>
                     <?php else: ?>
                         <div class="cart-quantity-display">SL: <?= e($item['quantity']) ?></div>
@@ -76,7 +93,10 @@
 
                     <div class="cart-item-total">
                         <?php if ($product !== null && $item['subtotal'] !== null): ?>
-                            <strong><?= e(format_vnd($item['subtotal'])) ?></strong>
+                            <strong
+                                data-cart-line-subtotal
+                                data-subtotal="<?= e($item['subtotal']) ?>"
+                            ><?= e(format_vnd($item['subtotal'])) ?></strong>
                         <?php else: ?>
                             <strong>—</strong>
                         <?php endif; ?>
@@ -94,11 +114,13 @@
             <h2>Tóm tắt giỏ hàng</h2>
             <div class="checkout-line">
                 <span>Số lượng sản phẩm</span>
-                <strong><?= e(array_sum(array_column($items, 'quantity'))) ?></strong>
+                <strong data-cart-item-count><?= e(array_sum(array_column($items, 'quantity'))) ?></strong>
             </div>
             <div class="checkout-total">
                 <span>Tạm tính</span>
-                <strong><?= $total === null ? 'Không thể tính' : e(format_vnd($total)) ?></strong>
+                <strong data-cart-total data-total="<?= e($total ?? '') ?>">
+                    <?= $total === null ? 'Không thể tính' : e(format_vnd($total)) ?>
+                </strong>
             </div>
             <?php if (!$catalogDemoMode && !$hasDemoItems && $cartErrors === [] && $total !== null): ?>
                 <a class="button checkout-button" href="/checkout">Tiến hành thanh toán</a>
@@ -118,3 +140,39 @@
         </aside>
     <?php endif; ?>
 </section>
+
+<?php if ($recommendedProducts !== []): ?>
+    <section class="cart-recommendations" aria-labelledby="cart-recommendations-title">
+        <h2 id="cart-recommendations-title">Sản phẩm có thể bạn sẽ yêu thích</h2>
+        <div class="product-grid">
+            <?php foreach ($recommendedProducts as $product): ?>
+                <article class="product-card">
+                    <a class="product-card-link" href="/products/<?= e($product['id']) ?>">
+                        <div class="product-art">
+                            <?php if ($product['imagePath'] !== null): ?>
+                                <img src="<?= e($product['imagePath']) ?>" alt="<?= e($product['name']) ?>" loading="lazy" decoding="async">
+                            <?php else: ?>
+                                <span aria-hidden="true"><?= e($product['icon']) ?></span>
+                                <small>Chưa có ảnh sản phẩm</small>
+                            <?php endif; ?>
+                        </div>
+                        <div class="product-card-body">
+                            <span class="product-label">
+                                <?= e($product['speciesLabel']) ?> · <?= e($product['categoryLabel']) ?>
+                                <?= $product['isDemo'] ? ' · DEMO' : '' ?>
+                            </span>
+                            <h2><?= e($product['name']) ?></h2>
+                            <div class="product-card-footer">
+                                <strong>
+                                    <?= $product['isDemo'] ? 'Giá mẫu: ' : ($product['hasVariants'] ? 'Giá từ: ' : 'Giá: ') ?>
+                                    <?= e(format_vnd($product['price'])) ?>
+                                </strong>
+                                <span>Xem sản phẩm&nbsp;→</span>
+                            </div>
+                        </div>
+                    </a>
+                </article>
+            <?php endforeach; ?>
+        </div>
+    </section>
+<?php endif; ?>
