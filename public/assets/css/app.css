@@ -85,6 +85,29 @@ body {
     transition: background 120ms ease, color 120ms ease;
 }
 
+.site-nav a.nav-orders-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.nav-notification-badge {
+    display: inline-flex;
+    min-width: 1.2rem;
+    height: 1.2rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.3rem;
+    border: 2px solid #fff;
+    border-radius: 999px;
+    color: #fff;
+    background: #e04452;
+    font-size: 0.68rem;
+    font-weight: 800;
+    line-height: 1;
+    pointer-events: none;
+}
+
 .eyebrow a {
     color: #245cff;
     font-weight: 650;
@@ -777,7 +800,28 @@ h1 {
     align-items: center;
     gap: 3rem;
     padding-top: 1rem;
-    padding-bottom: 5rem;
+    padding-bottom: 2rem;
+}
+
+.product-description {
+    max-width: 1200px;
+    margin: 0 auto 4rem;
+    padding: 1.5rem 2rem;
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background: var(--panel);
+    box-shadow: var(--shadow-soft);
+}
+
+.product-description h2 {
+    margin-bottom: 0.75rem;
+    font-size: 1.35rem;
+}
+
+.product-description p {
+    margin: 0;
+    color: var(--text-soft);
+    line-height: 1.75;
 }
 
 .product-detail-art {
@@ -1597,6 +1641,7 @@ h1 {
     .page-heading,
     .catalog-layout,
     .product-detail,
+    .product-description,
     .auth-panel,
     .cart-page,
     .checkout-layout,
@@ -1646,7 +1691,7 @@ h1 {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 1rem;
-    max-width: 1200px;
+    max-width: none;
     margin: 0 auto 4rem;
     padding: 0 2rem;
 }
@@ -1693,6 +1738,9 @@ h1 {
     align-items: end;
     justify-content: space-between;
     gap: 1rem;
+    max-width: none;
+    padding-right: 2rem;
+    padding-left: 2rem;
 }
 
 .admin-page-heading .button {
@@ -1701,8 +1749,8 @@ h1 {
 }
 
 .admin-content-card {
-    max-width: 1200px;
-    margin: 0 auto 4rem;
+    max-width: none;
+    margin: 0 2rem 2rem;
     padding: 1.5rem;
 }
 
@@ -1720,7 +1768,7 @@ h1 {
     display: grid;
     grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
     gap: 1.25rem;
-    max-width: 1200px;
+    max-width: none;
     margin: 0 auto 4rem;
     padding: 0 2rem;
 }
@@ -1867,7 +1915,7 @@ h1 {
     grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.75fr);
     align-items: start;
     gap: 1rem;
-    max-width: 1200px;
+    max-width: none;
     margin: 0 auto 4rem;
     padding: 0 2rem;
 }
@@ -1919,6 +1967,8 @@ h1 {
 
     .admin-content-card {
         padding: 1rem;
+        margin-right: 1rem;
+        margin-left: 1rem;
     }
 }
 
@@ -1977,9 +2027,54 @@ h1 {
     display: grid;
     grid-template-columns: minmax(260px, 0.7fr) minmax(0, 1.3fr);
     gap: 1rem;
-    max-width: 1200px;
+    max-width: none;
     margin: 0 auto 4rem;
     padding: 0 2rem;
+}
+
+.admin-category-layout .admin-content-card {
+    max-width: none;
+    margin: 0;
+}
+
+.admin-inventory-form {
+    display: flex;
+    align-items: end;
+    flex-wrap: nowrap;
+    gap: 0.75rem;
+    min-width: max-content;
+}
+
+.admin-inventory-form label {
+    display: grid;
+    gap: 0.35rem;
+    color: #53627a;
+    font-size: 0.82rem;
+    font-weight: 650;
+}
+
+.admin-inventory-form input,
+.admin-inventory-form select {
+    min-height: 2.6rem;
+    padding: 0.55rem 0.65rem;
+    border: 1px solid #d2daea;
+    border-radius: 0.45rem;
+    color: #1e2a41;
+    background: #fff;
+    font: inherit;
+}
+
+.admin-inventory-form input[name="quantity_delta"] {
+    width: 9rem;
+}
+
+.admin-inventory-form input[name="reason"] {
+    width: 13rem;
+}
+
+.admin-inventory-form .button {
+    margin: 0;
+    white-space: nowrap;
 }
 
 .admin-category-form {

@@ -20,6 +20,16 @@ use RuntimeException;
 
 final class AdminController extends Controller
 {
+    protected function render(string $view, array $data = []): void
+    {
+        if (is_array($_SESSION['user'] ?? null) && ($_SESSION['user']['role'] ?? '') === 'admin') {
+            $data['pendingOrderCount'] = (new AdminOrderManager(Database::connection()))
+                ->pendingConfirmationCount();
+        }
+
+        parent::render($view, $data);
+    }
+
     public function dashboard(): void
     {
         if (!$this->requireAdmin()) {

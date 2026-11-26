@@ -25,14 +25,18 @@ final class AdminOrderManager
     public function dashboardStats(): array
     {
         $orderCount = (int) $this->connection->query('SELECT COUNT(*) FROM orders')->fetchColumn();
-        $pendingCount = (int) $this->connection->query(
-            "SELECT COUNT(*) FROM orders WHERE status = 'pending'"
-        )->fetchColumn();
 
         return [
             'orderCount' => $orderCount,
-            'pendingCount' => $pendingCount,
+            'pendingCount' => $this->pendingConfirmationCount(),
         ];
+    }
+
+    public function pendingConfirmationCount(): int
+    {
+        return (int) $this->connection->query(
+            "SELECT COUNT(*) FROM orders WHERE status = 'pending'"
+        )->fetchColumn();
     }
 
     public function findAll(): array

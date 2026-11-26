@@ -35,9 +35,6 @@
             <?= e(format_vnd($product['price'])) ?>
         </p>
         <p>Mã sản phẩm: <?= e($product['sku']) ?></p>
-        <?php if ($product['description'] !== ''): ?>
-            <p><?= e($product['description']) ?></p>
-        <?php endif; ?>
         <?php if ($product['stockQuantity'] > 0): ?>
             <form class="add-to-cart-form" method="post" action="/cart/add">
                 <input type="hidden" name="_csrf_token" value="<?= e(csrf_token()) ?>">
@@ -84,6 +81,12 @@
         <a class="button" href="/">Quay lại danh sách sản phẩm</a>
     </div>
 </article>
+<?php if ($product['description'] !== ''): ?>
+    <section class="product-description" aria-labelledby="product-description-title">
+        <h2 id="product-description-title">Mô tả sản phẩm</h2>
+        <p><?= e($product['description']) ?></p>
+    </section>
+<?php endif; ?>
 <?php if (count($product['images']) > 1 || $product['variants'] !== []): ?>
     <script>
         (() => {

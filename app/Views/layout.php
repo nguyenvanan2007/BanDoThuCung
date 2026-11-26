@@ -10,6 +10,9 @@
 <body>
     <?php
     $headerUser = $_SESSION['user'] ?? null;
+    $pendingOrderCount = isset($pendingOrderCount) && is_int($pendingOrderCount)
+        ? max(0, $pendingOrderCount)
+        : 0;
     $headerAccountName = is_array($headerUser) && is_string($headerUser['name'] ?? null)
         ? trim($headerUser['name'])
         : '';
@@ -32,7 +35,20 @@
                     <a href="/admin/products">Sản phẩm</a>
                     <a href="/admin/categories">Danh mục</a>
                     <a href="/admin/users">Tài khoản</a>
-                    <a href="/admin/orders">Đơn hàng</a>
+                    <a
+                        class="nav-orders-link"
+                        href="/admin/orders"
+                        aria-label="<?= e($pendingOrderCount > 0
+                            ? 'Đơn hàng, ' . $pendingOrderCount . ' đơn chờ xác nhận'
+                            : 'Đơn hàng') ?>"
+                    >
+                        Đơn hàng
+                        <?php if ($pendingOrderCount > 0): ?>
+                            <span class="nav-notification-badge" aria-hidden="true">
+                                <?= e($pendingOrderCount > 99 ? '99+' : (string) $pendingOrderCount) ?>
+                            </span>
+                        <?php endif; ?>
+                    </a>
                     <a href="/admin/inventory">Kho</a>
                     <a href="/admin/coupons">Mã giảm giá</a>
                     <a href="/admin/reports">Báo cáo</a>
