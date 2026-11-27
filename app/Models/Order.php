@@ -36,10 +36,10 @@ final class Order
         if ($shippingFee < 0) {
             throw new DomainException('Phí giao hàng không hợp lệ.');
         }
-        if (!in_array($paymentMethod, ['cod', 'vnpay'], true)
-            || ($paymentMethod === 'vnpay'
+        if (!in_array($paymentMethod, ['cod', 'sepay'], true)
+            || ($paymentMethod === 'sepay'
                 && ($paymentReference === null
-                    || preg_match('/\A[A-Za-z0-9_-]{1,100}\z/', $paymentReference) !== 1))
+                    || preg_match('/\ATP[A-F0-9]{16}\z/', $paymentReference) !== 1))
             || ($paymentMethod === 'cod' && $paymentReference !== null)) {
             throw new DomainException('Phương thức thanh toán không hợp lệ.');
         }
@@ -192,11 +192,8 @@ final class Order
             }
 
             $total = $subtotal + $shippingFee - $discount;
-            if ($paymentMethod === 'vnpay' && $total > intdiv(PHP_INT_MAX, 100)) {
-                throw new DomainException('Tổng tiền vượt quá giới hạn của cổng thanh toán.');
-            }
-            if ($paymentMethod === 'vnpay' && $total < 1) {
-                throw new DomainException('Tổng tiền sau giảm giá phải lớn hơn 0 để thanh toán qua VNPAY.');
+            if ($paymentMethod === 'sepay' && $total < 1) {
+                throw new DomainException('Tổng tiền sau giảm giá phải lớn hơn 0 để thanh toán qua SePay.');
             }
             $orderNumber = 'PH-' . date('YmdHis') . '-' . strtoupper(bin2hex(random_bytes(4)));
             $insertOrder = $this->connection->prepare(
@@ -222,7 +219,7 @@ final class Order
                 'coupon_code' => is_array($coupon) ? (string) $coupon['code'] : null,
                 'total_vnd' => $total,
                 'payment_method' => $paymentMethod,
-                'payment_status' => $paymentMethod === 'vnpay' ? 'pending' : 'unpaid',
+                'payment_status' => $paymentMethod === 'sepay' ? 'pending' : 'unpaid',
                 'status' => 'pending',
             ]);
             $orderId = (string) $this->connection->lastInsertId();
@@ -316,11 +313,11 @@ final class Order
                     'coupon_id' => (string) $coupon['id'],
                     'order_id' => $orderId,
                     'user_id' => $userId,
-                    'status' => $paymentMethod === 'vnpay' ? 'reserved' : 'used',
+                    'status' => $paymentMethod === 'sepay' ? 'reserved' : 'used',
                 ]);
             }
 
-            if ($paymentMethod === 'vnpay') {
+            if ($paymentMethod === 'sepay') {
                 $transaction = $this->connection->prepare(
                     'INSERT INTO payment_transactions'
                     . ' (order_id, provider, transaction_ref, amount_vnd, status)'
@@ -328,7 +325,7 @@ final class Order
                 );
                 $transaction->execute([
                     'order_id' => $orderId,
-                    'provider' => 'VNPAY',
+                    'provider' => 'SEPAY',
                     'reference' => $paymentReference,
                     'amount' => $total,
                     'status' => 'pending',

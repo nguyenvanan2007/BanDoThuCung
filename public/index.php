@@ -259,13 +259,36 @@ try {
         exit;
     }
 
-    if ($route === '/payment/vnpay/return' && $method === 'GET') {
-        (new PaymentController())->vnpayReturn();
+    if ($route === '/payment/sepay/webhook') {
+        if ($method === 'POST') {
+            (new PaymentController())->sepayWebhook();
+            exit;
+        }
+
+        http_response_code(405);
+        header('Allow: POST');
         exit;
     }
 
-    if ($route === '/payment/vnpay/ipn' && $method === 'GET') {
-        (new PaymentController())->vnpayIpn();
+    if (preg_match('~\A/payment/sepay/status/([A-Za-z0-9_-]{1,100})\z~', $route, $matches) === 1) {
+        if ($method === 'GET') {
+            (new PaymentController())->sepayStatus($matches[1]);
+            exit;
+        }
+
+        http_response_code(405);
+        header('Allow: GET');
+        exit;
+    }
+
+    if (preg_match('~\A/payment/sepay/([A-Za-z0-9_-]{1,100})\z~', $route, $matches) === 1) {
+        if ($method === 'GET') {
+            (new PaymentController())->sepayPayment($matches[1]);
+            exit;
+        }
+
+        http_response_code(405);
+        header('Allow: GET');
         exit;
     }
 

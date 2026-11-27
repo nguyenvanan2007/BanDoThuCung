@@ -7,6 +7,7 @@
     --panel: #fff;
     --panel-soft: #f8f8f9;
     --border: #e0e2e5;
+    --border-hover: #1685d1;
     --primary: #666b73;
     --primary-dark: #454a52;
     --primary-soft: #eaebed;
@@ -336,7 +337,7 @@ h1 {
 
 .catalog-search-form {
     display: grid;
-    grid-template-columns: minmax(220px, 2fr) minmax(120px, 1fr) minmax(140px, 1.3fr) minmax(135px, 1.2fr) minmax(125px, 1.1fr) auto auto;
+    grid-template-columns: minmax(220px, 2fr) minmax(120px, 1fr) minmax(140px, 1.3fr) minmax(135px, 1.2fr) minmax(125px, 1.1fr) auto;
     align-items: end;
     gap: 0.75rem;
     padding: 1rem;
@@ -395,8 +396,13 @@ h1 {
     box-shadow: 0 10px 20px rgb(91 33 182 / 24%);
 }
 
+.catalog-filter-actions {
+    display: grid;
+    justify-items: center;
+    gap: 0.25rem;
+}
+
 .catalog-reset-link {
-    align-self: center;
     color: var(--primary);
     font-size: 0.9rem;
     white-space: nowrap;
@@ -480,7 +486,7 @@ h1 {
 
 .shop-category-card:hover {
     transform: translateY(-2px);
-    border-color: #d4d6d9;
+    border-color: var(--border-hover);
     box-shadow: var(--shadow-card);
 }
 
@@ -622,7 +628,7 @@ h1 {
 
 .product-card:hover {
     transform: translateY(-3px);
-    border-color: #d4d6d9;
+    border-color: var(--border-hover);
     box-shadow: var(--shadow-card);
 }
 
@@ -1231,7 +1237,7 @@ h1 {
 
 .account-shortcut:hover {
     transform: translateY(-1px);
-    border-color: #d4d6d9;
+    border-color: var(--border-hover);
     box-shadow: var(--shadow-soft);
 }
 
@@ -1451,6 +1457,89 @@ h1 {
 .checkout-button:disabled:hover {
     transform: none;
     filter: none;
+}
+
+.sepay-payment-panel {
+    display: grid;
+    justify-items: center;
+    gap: 1.25rem;
+    max-width: 860px;
+    margin: 0 auto 4rem;
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background: #fff;
+    box-shadow: var(--shadow-soft);
+    text-align: center;
+}
+
+.sepay-payment-panel h2,
+.sepay-payment-panel p {
+    margin: 0;
+}
+
+.sepay-payment-content {
+    display: grid;
+    width: 100%;
+    grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
+    align-items: center;
+    gap: 1.5rem;
+    text-align: left;
+}
+
+.sepay-qr-frame {
+    display: grid;
+    min-height: 280px;
+    place-items: center;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 0.85rem;
+    background: #fff;
+}
+
+.sepay-qr-code {
+    display: block;
+    width: 100%;
+    max-width: 280px;
+    aspect-ratio: 1;
+    object-fit: contain;
+}
+
+.sepay-payment-details {
+    display: grid;
+    gap: 0.9rem;
+}
+
+.sepay-payment-details dl {
+    display: grid;
+    gap: 0.7rem;
+    margin: 0;
+}
+
+.sepay-payment-details dl > div {
+    display: grid;
+    gap: 0.15rem;
+}
+
+.sepay-payment-details dt {
+    color: var(--text-soft);
+    font-size: 0.85rem;
+}
+
+.sepay-payment-details dd {
+    margin: 0;
+    font-weight: 700;
+}
+
+.sepay-payment-details code {
+    overflow-wrap: anywhere;
+    color: var(--primary-dark);
+    font-size: 1rem;
+}
+
+.sepay-payment-status {
+    color: var(--primary-dark);
+    font-weight: 650;
 }
 
 .checkout-layout,
@@ -1877,8 +1966,8 @@ h1 {
         width: 100%;
     }
 
-    .catalog-reset-link {
-        text-align: center;
+    .catalog-filter-actions {
+        grid-column: 1 / -1;
     }
 }
 
@@ -2040,7 +2129,7 @@ h1 {
 
 .admin-stat-card:hover {
     transform: translateY(-2px);
-    border-color: #d4d6d9;
+    border-color: var(--border-hover);
     box-shadow: var(--shadow-card);
 }
 
@@ -2781,6 +2870,10 @@ h1 {
     width: 100%;
 }
 
+.product-gallery-stage {
+    position: relative;
+}
+
 .product-gallery-main {
     display: block;
     width: 100%;
@@ -2790,8 +2883,52 @@ h1 {
     background: #fff;
 }
 
+.product-gallery-arrow {
+    position: absolute;
+    top: 50%;
+    display: grid;
+    width: 2.5rem;
+    height: 2.5rem;
+    place-items: center;
+    padding: 0;
+    transform: translateY(-50%);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    color: #30343a;
+    background: rgb(255 255 255 / 90%);
+    box-shadow: var(--shadow-soft);
+    cursor: pointer;
+    font: inherit;
+    line-height: 1;
+    transition: border-color 140ms ease, background 140ms ease;
+}
+
+.product-gallery-arrow svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2.5;
+}
+
+.product-gallery-arrow:hover {
+    border-color: var(--border-hover);
+    background: #fff;
+}
+
+.product-gallery-previous {
+    left: 0.75rem;
+}
+
+.product-gallery-next {
+    right: 0.75rem;
+}
+
 .product-gallery-thumbnails {
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
     gap: 0.5rem;
     padding: 0.75rem;
@@ -2806,6 +2943,12 @@ h1 {
     border-radius: 0.45rem;
     background: #fff;
     cursor: pointer;
+    transition: border-color 140ms ease;
+}
+
+.product-gallery-thumbnail:hover,
+.product-gallery-thumbnail.is-active {
+    border-color: var(--border-hover);
 }
 
 .product-gallery-thumbnail img {
@@ -2862,6 +3005,18 @@ h1 {
 
     .product-gallery-main {
         height: 280px;
+    }
+
+    .sepay-payment-content {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .sepay-qr-frame {
+        min-height: 0;
+    }
+
+    .sepay-qr-code {
+        max-width: 240px;
     }
 
     .order-cancel-panel {

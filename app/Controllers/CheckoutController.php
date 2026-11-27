@@ -11,7 +11,7 @@ use App\Models\Order;
 use App\Models\PaymentManager;
 use App\Models\ProductCatalogInterface;
 use App\Services\Notification\OrderNotificationMailer;
-use App\Services\Payment\VnpayGateway;
+use App\Services\Payment\SePayBankTransfer;
 use DomainException;
 use PHPMailer\PHPMailer\Exception as MailException;
 use PDOException;
@@ -40,7 +40,7 @@ final class CheckoutController extends Controller
         }
 
         $this->render('checkout/index', [
-            'title' => 'Thanh toán COD | TPet',
+            'title' => 'Thanh toán | TPet',
             'items' => $checkout['items'],
             'subtotal' => $checkout['subtotal'],
             'shippingFee' => $checkout['shippingFee'],
@@ -75,7 +75,7 @@ final class CheckoutController extends Controller
         $phone = trim($this->postText('phone'));
         $address = trim($this->postText('address'));
         $paymentMethod = $this->postText('payment_method');
-        $paymentMethod = in_array($paymentMethod, ['cod', 'vnpay'], true) ? $paymentMethod : '';
+        $paymentMethod = in_array($paymentMethod, ['cod', 'sepay'], true) ? $paymentMethod : '';
         $couponCode = strtoupper(trim($this->postText('coupon_code')));
         $errors = $this->validateShippingDetails($recipientName, $phone, $address);
         $checkout = $this->checkoutItems($couponCode);
@@ -88,18 +88,18 @@ final class CheckoutController extends Controller
             $errors[] = 'Chế độ dữ liệu minh họa không thể tạo đơn hàng thật.';
         }
 
-        $gateway = new VnpayGateway();
-        if ($paymentMethod === 'vnpay') {
+        $gateway = new SePayBankTransfer();
+        if ($paymentMethod === 'sepay') {
             try {
                 $gateway->assertConfigured();
             } catch (RuntimeException $exception) {
-                $errors[] = 'Thanh toán VNPAY chưa sẵn sàng: ' . $exception->getMessage();
+                $errors[] = 'Thanh toán SePay chưa sẵn sàng: ' . $exception->getMessage();
             }
         }
 
         if ($errors !== []) {
             $this->render('checkout/index', [
-                'title' => 'Thanh toán COD | TPet',
+                'title' => 'Thanh toán | TPet',
                 'items' => $checkout['items'],
                 'subtotal' => $checkout['subtotal'],
                 'shippingFee' => $checkout['shippingFee'],
@@ -116,8 +116,8 @@ final class CheckoutController extends Controller
             return;
         }
 
-        $paymentReference = $paymentMethod === 'vnpay'
-            ? VnpayGateway::newTransactionReference()
+        $paymentReference = $paymentMethod === 'sepay'
+            ? SePayBankTransfer::newPaymentReference()
             : null;
         try {
             $orderModel = new Order(Database::connection());
@@ -137,7 +137,7 @@ final class CheckoutController extends Controller
             $checkout = $this->checkoutItems($couponCode);
             $checkout['errors'][] = $exception->getMessage();
             $this->render('checkout/index', [
-                'title' => 'Thanh toán COD | TPet',
+                'title' => 'Thanh toán | TPet',
                 'items' => $checkout['items'],
                 'subtotal' => $checkout['subtotal'],
                 'shippingFee' => $checkout['shippingFee'],
@@ -155,23 +155,17 @@ final class CheckoutController extends Controller
         }
 
         $_SESSION['cart_items'] = [];
-        if ($paymentMethod === 'vnpay' && $paymentReference !== null) {
+        if ($paymentMethod === 'sepay' && $paymentReference !== null) {
             $paymentManager = new PaymentManager(Database::connection(), $gateway);
-            $paymentRequest = $paymentManager->findRequestForCustomer(
+            $paymentRequest = $paymentManager->findSePayPaymentForCustomer(
                 $paymentReference,
                 (string) $_SESSION['user']['id']
             );
             $orderModel = new Order(Database::connection());
             $order = $orderModel->findForCustomer((string) $_SESSION['user']['id'], $orderId);
             if ($paymentRequest === null || $order === null) {
-                throw new RuntimeException('Không thể tải thông tin thanh toán VNPAY vừa tạo.');
+                throw new RuntimeException('Không thể tải thông tin thanh toán SePay vừa tạo.');
             }
-            $paymentUrl = $gateway->createPaymentUrl(
-                $paymentReference,
-                (string) $paymentRequest['order_number'],
-                (int) $paymentRequest['amount_vnd'],
-                (string) ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1')
-            );
             try {
                 (new OrderNotificationMailer())->sendOrderConfirmation($order);
             } catch (MailException | RuntimeException | PDOException $exception) {
@@ -185,7 +179,7 @@ final class CheckoutController extends Controller
                     'message' => 'Đơn hàng đã được tạo nhưng email xác nhận chưa gửi được.',
                 ];
             }
-            $this->redirect($paymentUrl);
+            $this->redirect('/payment/sepay/' . rawurlencode($paymentReference));
         }
 
         try {

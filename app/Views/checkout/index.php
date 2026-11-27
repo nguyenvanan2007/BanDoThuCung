@@ -45,8 +45,8 @@
                         Tiền mặt khi nhận hàng (COD)
                     </label>
                     <label>
-                        <input type="radio" name="payment_method" value="vnpay" <?= $paymentMethod === 'vnpay' ? 'checked' : '' ?>>
-                        Thanh toán trực tuyến qua VNPAY
+                        <input type="radio" name="payment_method" value="sepay" <?= $paymentMethod === 'sepay' ? 'checked' : '' ?>>
+                        Chuyển khoản ngân hàng bằng QR qua SePay
                     </label>
                 </fieldset>
                 <button class="button" type="submit">Xác nhận đặt hàng</button>

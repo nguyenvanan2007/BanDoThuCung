@@ -66,7 +66,8 @@ function payment_method_label(string $method): string
 {
     return match ($method) {
         'cod' => 'Tiền mặt khi nhận hàng (COD)',
-        'vnpay' => 'VNPAY',
+        'sepay' => 'Chuyển khoản QR qua SePay',
+        'legacy_online' => 'Thanh toán trực tuyến (đơn cũ)',
         default => 'Không xác định',
     };
 }

@@ -112,4 +112,4 @@
     </aside>
 </section>
 
-<?php require dirname(__DIR__) . '/partials/order-history.php'; ?>
+<?php require dirname(__DIR__, 2) . '/partials/order-history.php'; ?>

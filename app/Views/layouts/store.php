@@ -79,7 +79,6 @@
                 <?php endif; ?>
             <?php else: ?>
                 <a href="/login">Đăng nhập</a>
-                <a href="/register">Đăng ký</a>
             <?php endif; ?>
         </nav>
         <div class="header-account">
@@ -170,7 +169,7 @@
                     <span class="footer-highlight-icon" aria-hidden="true">💳</span>
                     <span>
                         <strong>Thanh toán linh hoạt</strong>
-                        <small>COD hoặc VNPAY</small>
+                        <small>COD hoặc SePay</small>
                     </span>
                 </div>
                 <div class="footer-highlight">
@@ -208,15 +207,14 @@
                     <a href="/account">Tài khoản</a>
                     <a href="/orders">Đơn hàng</a>
                     <a href="/login">Đăng nhập</a>
-                    <a href="/register">Đăng ký</a>
                 </nav>
 
                 <section class="footer-column">
                     <h2>Thanh toán</h2>
                     <p>Chọn phương thức thanh toán khi đặt hàng:</p>
-                    <div class="footer-payment-options" aria-label="COD và VNPAY">
+                    <div class="footer-payment-options" aria-label="COD và SePay">
                         <span>COD</span>
-                        <span>VNPAY</span>
+                        <span>SePay</span>
                     </div>
                 </section>
             </div>

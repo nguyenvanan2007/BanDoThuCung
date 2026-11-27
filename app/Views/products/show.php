@@ -5,12 +5,32 @@
 <article class="product-detail">
     <div class="product-detail-art">
         <?php if ($product['images'] !== []): ?>
-            <div class="product-gallery">
-                <img class="product-gallery-main" src="<?= e($product['images'][0]) ?>" alt="<?= e($product['name']) ?>">
+            <div class="product-gallery" data-product-gallery>
+                <div class="product-gallery-stage">
+                    <img class="product-gallery-main" src="<?= e($product['images'][0]) ?>" alt="<?= e($product['name']) ?>">
+                    <?php if (count($product['images']) > 1): ?>
+                        <button class="product-gallery-arrow product-gallery-previous" type="button" aria-label="Ảnh trước">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <path d="m15 18-6-6 6-6" />
+                            </svg>
+                        </button>
+                        <button class="product-gallery-arrow product-gallery-next" type="button" aria-label="Ảnh tiếp theo">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <path d="m9 18 6-6-6-6" />
+                            </svg>
+                        </button>
+                    <?php endif; ?>
+                </div>
                 <?php if (count($product['images']) > 1): ?>
-                    <div class="product-gallery-thumbnails" aria-label="Các ảnh sản phẩm">
-                        <?php foreach ($product['images'] as $image): ?>
-                            <button class="product-gallery-thumbnail" type="button" data-image="<?= e($image) ?>" aria-label="Xem ảnh sản phẩm">
+                    <div class="product-gallery-thumbnails" role="group" aria-label="Chọn ảnh sản phẩm">
+                        <?php foreach ($product['images'] as $index => $image): ?>
+                            <button
+                                class="product-gallery-thumbnail<?= $index === 0 ? ' is-active' : '' ?>"
+                                type="button"
+                                data-image="<?= e($image) ?>"
+                                aria-label="Xem ảnh sản phẩm <?= e($index + 1) ?>"
+                                aria-pressed="<?= $index === 0 ? 'true' : 'false' ?>"
+                            >
                                 <img src="<?= e($image) ?>" alt="" loading="lazy" decoding="async">
                             </button>
                         <?php endforeach; ?>
@@ -90,12 +110,77 @@
 <?php if (count($product['images']) > 1 || $product['variants'] !== []): ?>
     <script>
         (() => {
-            const mainImage = document.querySelector('.product-gallery-main');
-            document.querySelectorAll('.product-gallery-thumbnail').forEach((button) => {
-                button.addEventListener('click', () => {
-                    mainImage.src = button.dataset.image;
-                });
-            });
+            const gallery = document.querySelector('[data-product-gallery]');
+            if (gallery) {
+                const mainImage = gallery.querySelector('.product-gallery-main');
+                const thumbnails = Array.from(gallery.querySelectorAll('.product-gallery-thumbnail'));
+
+                if (thumbnails.length > 1) {
+                    const previousButton = gallery.querySelector('.product-gallery-previous');
+                    const nextButton = gallery.querySelector('.product-gallery-next');
+                    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                    let activeIndex = 0;
+                    let autoplayTimer = null;
+                    let isHovered = false;
+                    let hasFocus = false;
+
+                    const showImage = (index) => {
+                        activeIndex = (index + thumbnails.length) % thumbnails.length;
+                        mainImage.src = thumbnails[activeIndex].dataset.image;
+                        thumbnails.forEach((thumbnail, thumbnailIndex) => {
+                            const isActive = thumbnailIndex === activeIndex;
+                            thumbnail.classList.toggle('is-active', isActive);
+                            thumbnail.setAttribute('aria-pressed', String(isActive));
+                        });
+                    };
+
+                    const updateAutoplay = () => {
+                        window.clearInterval(autoplayTimer);
+                        autoplayTimer = null;
+
+                        if (reducedMotion || isHovered || hasFocus || document.hidden) {
+                            return;
+                        }
+
+                        autoplayTimer = window.setInterval(() => {
+                            showImage(activeIndex + 1);
+                        }, 4000);
+                    };
+
+                    thumbnails.forEach((button, index) => {
+                        button.addEventListener('click', () => {
+                            showImage(index);
+                            updateAutoplay();
+                        });
+                    });
+                    previousButton.addEventListener('click', () => {
+                        showImage(activeIndex - 1);
+                        updateAutoplay();
+                    });
+                    nextButton.addEventListener('click', () => {
+                        showImage(activeIndex + 1);
+                        updateAutoplay();
+                    });
+                    gallery.addEventListener('mouseenter', () => {
+                        isHovered = true;
+                        updateAutoplay();
+                    });
+                    gallery.addEventListener('mouseleave', () => {
+                        isHovered = false;
+                        updateAutoplay();
+                    });
+                    gallery.addEventListener('focusin', () => {
+                        hasFocus = true;
+                        updateAutoplay();
+                    });
+                    gallery.addEventListener('focusout', (event) => {
+                        hasFocus = gallery.contains(event.relatedTarget);
+                        updateAutoplay();
+                    });
+                    document.addEventListener('visibilitychange', updateAutoplay);
+                    updateAutoplay();
+                }
+            }
 
             const variantSelect = document.getElementById('product-variant');
             if (variantSelect) {

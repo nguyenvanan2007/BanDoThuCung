@@ -244,9 +244,9 @@ final class AdminOrderManager
             if ($nextStatus === 'cancelled' && $currentPaymentStatus === 'paid') {
                 throw new DomainException('Đơn đã thanh toán; cần hoàn tiền trước khi hủy đơn.');
             }
-            if ($nextStatus !== 'cancelled' && $currentPaymentMethod === 'vnpay'
+            if ($nextStatus !== 'cancelled' && in_array($currentPaymentMethod, ['sepay', 'legacy_online'], true)
                 && $currentPaymentStatus !== 'paid') {
-                throw new DomainException('Chỉ xác nhận đơn VNPAY sau khi IPN đã xác nhận thanh toán.');
+                throw new DomainException('Chỉ xác nhận đơn thanh toán trực tuyến sau khi đã nhận xác nhận thanh toán.');
             }
             if ($nextStatus !== 'cancelled' && $currentPaymentStatus === 'refunded') {
                 throw new DomainException('Không thể tiếp tục xử lý đơn đã hoàn tiền.');

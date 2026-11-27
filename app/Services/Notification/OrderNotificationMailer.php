@@ -15,8 +15,8 @@ final class OrderNotificationMailer
         $this->send(
             $order,
             'TPet đã nhận đơn hàng ' . (string) $order['order_number'],
-            ($order['payment_method'] ?? 'cod') === 'vnpay'
-                ? 'Đơn hàng đã được tạo. Vui lòng hoàn tất thanh toán VNPAY để xác nhận.'
+            ($order['payment_method'] ?? 'cod') === 'sepay'
+                ? 'Đơn hàng đã được tạo. Vui lòng quét mã QR trên trang thanh toán để chuyển khoản qua SePay.'
                 : 'Cảm ơn bạn đã đặt hàng. TPet đã nhận được đơn hàng và sẽ sớm xác nhận.'
         );
     }
@@ -36,12 +36,12 @@ final class OrderNotificationMailer
             $order,
             'Cập nhật thanh toán đơn hàng ' . (string) $order['order_number'],
             ($order['payment_status'] ?? '') === 'failed'
-                ? 'Thanh toán VNPAY không thành công. Đơn đã hủy và tồn kho đã được hoàn lại.'
+                ? 'Thanh toán SePay không thành công. Đơn đã hủy và tồn kho đã được hoàn lại.'
                 : (($order['status'] ?? '') === 'cancelled'
                     && ($order['payment_status'] ?? '') === 'paid'
-                    ? 'VNPAY đã xác nhận khoản thanh toán cho đơn đã hủy. Vui lòng liên hệ CSKH để được hỗ trợ hoàn tiền.'
-                    : (($order['payment_method'] ?? 'cod') === 'vnpay'
-                        ? 'Thanh toán đơn hàng của bạn đã được VNPAY xác nhận.'
+                    ? 'SePay đã xác nhận khoản thanh toán cho đơn đã hủy. Vui lòng liên hệ CSKH để được hỗ trợ hoàn tiền.'
+                    : (($order['payment_method'] ?? 'cod') === 'sepay'
+                        ? 'SePay đã xác nhận khoản chuyển khoản cho đơn hàng của bạn.'
                         : 'TPet đã ghi nhận thanh toán COD cho đơn hàng của bạn.'))
         );
     }
@@ -148,9 +148,7 @@ final class OrderNotificationMailer
         $shippingFee = format_vnd((int) ($order['shipping_fee_vnd'] ?? 0));
         $discount = format_vnd((int) ($order['discount_vnd'] ?? 0));
         $total = format_vnd((int) ($order['total_vnd'] ?? 0));
-        $paymentMethod = ($order['payment_method'] ?? 'cod') === 'vnpay'
-            ? 'VNPAY'
-            : 'Tiền mặt khi nhận hàng (COD)';
+        $paymentMethod = payment_method_label((string) ($order['payment_method'] ?? 'cod'));
         $discountLine = (int) ($order['discount_vnd'] ?? 0) > 0
             ? '<br>Giảm giá: ' . $escape($discount)
             : '';

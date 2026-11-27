@@ -131,7 +131,7 @@ CREATE TABLE IF NOT EXISTS orders (
     coupon_id BIGINT UNSIGNED NULL,
     coupon_code VARCHAR(40) NULL,
     total_vnd BIGINT UNSIGNED NOT NULL,
-    payment_method ENUM('cod', 'vnpay') NOT NULL DEFAULT 'cod',
+    payment_method ENUM('cod', 'sepay', 'legacy_online') NOT NULL DEFAULT 'cod',
     payment_status ENUM('unpaid', 'pending', 'paid', 'failed', 'refunded', 'cancelled') NOT NULL DEFAULT 'unpaid',
     status ENUM('pending', 'confirmed', 'shipping', 'completed', 'cancelled') NOT NULL DEFAULT 'pending',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

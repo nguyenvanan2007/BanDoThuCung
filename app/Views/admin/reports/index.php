@@ -2,7 +2,7 @@
     <div>
         <p class="eyebrow"><a href="/admin">Quản trị</a> / Báo cáo</p>
         <h1>Báo cáo cửa hàng</h1>
-        <p class="page-description">Doanh thu hiển thị theo trạng thái thanh toán; VNPAY chỉ được tính sau xác nhận IPN.</p>
+        <p class="page-description">Doanh thu hiển thị theo trạng thái thanh toán; đơn SePay chỉ được tính sau khi webhook xác nhận chuyển khoản.</p>
     </div>
 </section>
 

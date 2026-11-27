@@ -60,8 +60,10 @@
             </select>
         </label>
 
-        <button class="button catalog-search-button" type="submit">Áp dụng lọc</button>
-        <a class="catalog-reset-link" href="/">Xóa lọc</a>
+        <div class="catalog-filter-actions">
+            <button class="button catalog-search-button" type="submit">Áp dụng lọc</button>
+            <a class="catalog-reset-link" href="/">Xóa lọc</a>
+        </div>
     </form>
 </section>
 

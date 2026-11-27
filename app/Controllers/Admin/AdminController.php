@@ -782,7 +782,7 @@ final class AdminController extends Controller
                     static fn (string $status): bool => $status !== 'cancelled'
                 ));
             }
-            if ($order['payment_method'] === 'vnpay') {
+            if (in_array($order['payment_method'], ['sepay', 'legacy_online'], true)) {
                 return array_values(array_filter(
                     $nextStatuses,
                     static fn (string $status): bool => $status === 'cancelled'
