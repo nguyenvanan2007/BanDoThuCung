@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Services\VnpayGateway;
+use App\Services\Payment\VnpayGateway;
 use DomainException;
 use PDO;
 use Throwable;

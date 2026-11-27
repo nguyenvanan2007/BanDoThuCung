@@ -6,10 +6,10 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Core\Database;
-use App\Models\AdminOrderManager;
+use App\Models\Admin\AdminOrderManager;
 use App\Models\PaymentManager;
-use App\Services\OrderNotificationMailer;
-use App\Services\VnpayGateway;
+use App\Services\Notification\OrderNotificationMailer;
+use App\Services\Payment\VnpayGateway;
 use PDOException;
 use PHPMailer\PHPMailer\Exception as MailException;
 use RuntimeException;

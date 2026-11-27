@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Models;
+namespace App\Models\Admin;
 
+use App\Models\InventoryMovement;
 use DomainException;
 use PDO;
 use Throwable;

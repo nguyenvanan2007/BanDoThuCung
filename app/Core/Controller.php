@@ -18,7 +18,9 @@ class Controller
     {
         $viewsDirectory = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'Views';
         $viewPath = $viewsDirectory . DIRECTORY_SEPARATOR . $view . '.php';
-        $layoutPath = $viewsDirectory . DIRECTORY_SEPARATOR . 'layout.php';
+        $layoutPath = $viewsDirectory
+            . DIRECTORY_SEPARATOR . 'layouts'
+            . DIRECTORY_SEPARATOR . 'store.php';
 
         if (!is_file($viewPath) || !is_file($layoutPath)) {
             throw new RuntimeException('The requested view or layout does not exist.');

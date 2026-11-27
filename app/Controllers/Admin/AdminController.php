@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace App\Controllers;
+namespace App\Controllers\Admin;
 
 use App\Core\Controller;
 use App\Core\Database;
-use App\Models\AdminInventoryManager;
-use App\Models\AdminOrderManager;
-use App\Models\AdminProductManager;
-use App\Models\AdminReportManager;
+use App\Models\Admin\AdminInventoryManager;
+use App\Models\Admin\AdminOrderManager;
+use App\Models\Admin\AdminProductManager;
+use App\Models\Admin\AdminReportManager;
 use App\Models\CouponManager;
 use App\Models\User;
-use App\Services\OrderNotificationMailer;
+use App\Services\Notification\OrderNotificationMailer;
 use DomainException;
 use PHPMailer\PHPMailer\Exception as MailException;
 use PDOException;
@@ -40,7 +40,7 @@ final class AdminController extends Controller
         $products = new AdminProductManager($connection);
         $orders = new AdminOrderManager($connection);
 
-        $this->render('admin/dashboard', [
+        $this->render('admin/dashboard/index', [
             'title' => 'Quản trị | TPet',
             'activeProductCount' => $products->countActive(),
             'orderStats' => $orders->dashboardStats(),
@@ -54,7 +54,7 @@ final class AdminController extends Controller
             return;
         }
 
-        $this->render('admin/users', [
+        $this->render('admin/users/index', [
             'title' => 'Quản lý tài khoản | TPet',
             'users' => (new User(Database::connection()))->findAll(),
             'errors' => [],
@@ -96,7 +96,7 @@ final class AdminController extends Controller
         }
 
         if ($errors !== []) {
-            $this->render('admin/users', [
+            $this->render('admin/users/index', [
                 'title' => 'Quản lý tài khoản | TPet',
                 'users' => $manager->findAll(),
                 'errors' => $errors,
@@ -133,7 +133,7 @@ final class AdminController extends Controller
             return;
         }
 
-        $this->render('admin/products', [
+        $this->render('admin/products/index', [
             'title' => 'Quản lý sản phẩm | TPet',
             'products' => (new AdminProductManager(Database::connection()))->findAll(),
         ]);
@@ -146,7 +146,7 @@ final class AdminController extends Controller
         }
 
         $manager = new AdminProductManager(Database::connection());
-        $this->render('admin/categories', [
+        $this->render('admin/categories/index', [
             'title' => 'Quản lý danh mục | TPet',
             'categories' => $manager->findCategories(true),
             'errors' => [],
@@ -190,7 +190,7 @@ final class AdminController extends Controller
         }
 
         if ($errors !== []) {
-            $this->render('admin/categories', [
+            $this->render('admin/categories/index', [
                 'title' => 'Quản lý danh mục | TPet',
                 'categories' => (new AdminProductManager(Database::connection()))->findCategories(true),
                 'errors' => $errors,
@@ -368,7 +368,7 @@ final class AdminController extends Controller
             return;
         }
 
-        $this->render('admin/orders', [
+        $this->render('admin/orders/index', [
             'title' => 'Quản lý đơn hàng | TPet',
             'orders' => (new AdminOrderManager(Database::connection()))->findAll(),
         ]);
@@ -387,7 +387,7 @@ final class AdminController extends Controller
             return;
         }
 
-        $this->render('admin/order-show', [
+        $this->render('admin/orders/show', [
             'title' => 'Đơn ' . $order['order_number'] . ' | Quản trị TPet',
             'order' => $order,
             'nextStatuses' => $this->orderTransitions($manager, $order),
@@ -520,7 +520,7 @@ final class AdminController extends Controller
             }
 
             $manager = new AdminInventoryManager(Database::connection());
-            $this->render('admin/inventory', [
+            $this->render('admin/inventory/index', [
                 'title' => 'Quản lý tồn kho | Quản trị TPet',
                 'products' => $manager->snapshot(),
                 'movements' => $manager->history(),
@@ -719,7 +719,7 @@ final class AdminController extends Controller
             }
 
             $reports = new AdminReportManager(Database::connection());
-            $this->render('admin/reports', [
+            $this->render('admin/reports/index', [
                 'title' => 'Báo cáo cửa hàng | Quản trị TPet',
                 'orderCounts' => $reports->orderCounts(),
                 'dailyRevenue' => $reports->dailyRevenue(),
@@ -733,7 +733,7 @@ final class AdminController extends Controller
 
     private function renderCouponPage(array $errors, array $form): void
     {
-            $this->render('admin/coupons', [
+            $this->render('admin/coupons/index', [
                 'title' => 'Mã giảm giá | Quản trị TPet',
                 'coupons' => (new CouponManager(Database::connection()))->findAll(),
                 'errors' => $errors,
@@ -806,7 +806,7 @@ final class AdminController extends Controller
         if (($user['role'] ?? '') !== 'admin'
             || !(new User(Database::connection()))->isActiveAdministrator($user['id'])) {
             http_response_code(403);
-            $this->render('admin/forbidden', [
+            $this->render('admin/errors/forbidden', [
                 'title' => 'Không có quyền truy cập | TPet',
             ]);
             return false;
@@ -945,7 +945,7 @@ final class AdminController extends Controller
 
     private function renderProductForm(array $product, array $errors, bool $isEditing, array $categories): void
     {
-        $this->render('admin/product-form', [
+        $this->render('admin/products/form', [
             'title' => ($isEditing ? 'Sửa sản phẩm' : 'Thêm sản phẩm') . ' | Quản trị TPet',
             'product' => $product,
             'errors' => $errors,
@@ -1097,7 +1097,7 @@ final class AdminController extends Controller
 
     private function productImageDirectory(): string
     {
-        return dirname(__DIR__, 2)
+        return dirname(__DIR__, 3)
             . DIRECTORY_SEPARATOR . 'public'
             . DIRECTORY_SEPARATOR . 'assets'
             . DIRECTORY_SEPARATOR . 'images'
@@ -1143,7 +1143,7 @@ final class AdminController extends Controller
     private function showForbidden(): void
     {
         http_response_code(403);
-        $this->render('admin/forbidden', [
+        $this->render('admin/errors/forbidden', [
             'title' => 'Yêu cầu không hợp lệ | TPet',
         ]);
     }

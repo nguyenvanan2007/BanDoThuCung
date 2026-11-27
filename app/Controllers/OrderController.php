@@ -6,9 +6,9 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Core\Database;
-use App\Models\AdminOrderManager;
+use App\Models\Admin\AdminOrderManager;
 use App\Models\Order;
-use App\Services\OrderNotificationMailer;
+use App\Services\Notification\OrderNotificationMailer;
 use DomainException;
 use PHPMailer\PHPMailer\Exception as MailException;
 use PDOException;

@@ -11,7 +11,7 @@ final class NotFoundController extends Controller
     public function show(): void
     {
         http_response_code(404);
-        $this->render('not-found', [
+        $this->render('errors/not-found', [
             'title' => 'Không tìm thấy trang | TPet',
         ]);
     }

@@ -11,7 +11,7 @@ final class ServiceUnavailableController extends Controller
     public function show(): void
     {
         http_response_code(503);
-        $this->render('service-unavailable', [
+        $this->render('errors/service-unavailable', [
             'title' => 'Dịch vụ tạm thời không khả dụng | TPet',
         ]);
     }

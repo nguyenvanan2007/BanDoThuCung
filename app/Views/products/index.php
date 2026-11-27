@@ -1,6 +1,6 @@
 <section class="home-banner" aria-label="TPet - cửa hàng thức ăn cho thú cưng">
     <img
-        src="/assets/images/tpet-home-banner.svg"
+        src="/assets/images/banners/tpet-home-banner.svg"
         alt="TPet - Bữa ngon mỗi ngày, bé vui khỏe dài lâu. Chọn thức ăn yêu thích cho người bạn bốn chân."
         width="1440"
         height="440"

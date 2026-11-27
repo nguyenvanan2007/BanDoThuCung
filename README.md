@@ -19,6 +19,16 @@ Khung ứng dụng PHP 8.1+, OOP/MVC, Composer PSR-4, PDO và MySQL. Website t�
 
 5. Mở `http://127.0.0.1:8000`.
 
+## Cấu trúc dự án
+
+- `app/Controllers/`, `app/Models/`, `app/Services/`: điều phối request, dữ liệu và nghiệp vụ tích hợp.
+- `app/Views/`: giao diện chia theo chức năng; các màn quản trị nằm trong `admin/<module>/`.
+- `app/Core/` và `app/Helpers/`: thành phần dùng chung.
+- `public/`: điểm vào HTTP và tài nguyên CSS, JavaScript, hình ảnh.
+- `config/` và `database/`: bootstrap, schema, migration và dữ liệu mẫu.
+- `docs/`: tài liệu yêu cầu, use case, database và kiến trúc.
+- Sơ đồ chi tiết: [`docs/architecture/directory-structure.md`](docs/architecture/directory-structure.md).
+
 Mặc định `CATALOG_SOURCE=demo` để xem catalog mà không cần database. Để dùng tài khoản, quản trị và đặt hàng, cấu hình MySQL trong `.env` rồi import `database/schema.sql`; tùy chọn import `database/seed_demo.sql` một lần để thêm sản phẩm minh họa. Đặt `CATALOG_SOURCE=database` để catalog đọc dữ liệu MySQL. Sản phẩm demo không thể đặt hàng. Ảnh sản phẩm phải là ảnh cửa hàng có quyền sử dụng; có thể chép ảnh vào `public/assets/images/products/` để chọn tối đa 10 ảnh có sẵn, hoặc tải thêm một ảnh JPG, PNG hay WebP (tối đa 5 MB) trong form quản trị.
 
 `SHIPPING_FEE` phải là số nguyên không âm tính theo VND; `SHIPPING_FEE=0` nghĩa là miễn phí giao hàng. Phí và mã giảm giá được xác thực, tính lại trên server và lưu cùng đơn; tổng tiền gửi từ trình duyệt không được dùng làm căn cứ. Số lượng tồn và lượt dùng mã được khóa, xác thực trong transaction trước khi tạo đơn.

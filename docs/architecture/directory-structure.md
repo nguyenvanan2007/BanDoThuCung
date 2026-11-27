@@ -1,48 +1,66 @@
-# CẤU TRÚC THƯ MỤC
+# Cấu trúc dự án
 
 ```text
-asm2/
-├── assets/
-│   ├── css/
-│   │   └── style.css
-│   ├── js/
-│   │   └── app.js
-│   └── images/
-├── config/
-│   ├── config.php
-│   ├── autoload.php
-│   └── helpers.php
-├── core/
+app/
+├── Controllers/
+│   ├── Admin/
+│   └── AuthController.php, CartController.php, CheckoutController.php,
+│       OrderController.php, PaymentController.php, ProductController.php
+├── Core/
 │   ├── Controller.php
 │   └── Database.php
-├── controllers/
-│   ├── frontend/
-│   └── backend/
-├── models/
-├── views/
-│   ├── frontend/
-│   └── backend/
-├── database/
-│   └── asm2.sql
-└── index.php
+├── Helpers/
+├── Models/
+│   └── Admin/
+├── Services/
+│   ├── Notification/
+│   └── Payment/
+└── Views/
+    ├── admin/
+    │   ├── categories/
+    │   ├── coupons/
+    │   ├── dashboard/
+    │   ├── errors/
+    │   ├── inventory/
+    │   ├── orders/
+    │   ├── products/
+    │   ├── reports/
+    │   └── users/
+    ├── auth/
+    ├── cart/
+    ├── checkout/
+    ├── errors/
+    ├── layouts/
+    ├── orders/
+    ├── partials/
+    ├── payments/
+    └── products/
+config/
+database/
+├── backups/
+└── migrations/
+docs/
+public/
+└── assets/
+    ├── css/
+    ├── images/
+    │   ├── banners/
+    │   ├── logo/
+    │   └── products/
+    └── js/
 ```
 
-## Vai trò thư mục
-- `assets/`: CSS, JavaScript và hình ảnh tĩnh.
-- `config/`: cấu hình hệ thống, autoload và các hàm hỗ trợ.
-- `core/`: class nền tảng dùng chung như kết nối database và controller cơ sở.
-- `controllers/frontend/`: điều khiển nghiệp vụ phía người dùng.
-- `controllers/backend/`: điều khiển nghiệp vụ quản trị.
-- `models/`: truy vấn và thao tác dữ liệu.
-- `views/frontend/`: giao diện người dùng.
-- `views/backend/`: giao diện quản trị.
-- `database/`: file SQL khởi tạo database.
-- `index.php`: điểm vào chính của ứng dụng.
+## Vai trò
 
-## Các class/controller được xác định trong tài liệu
-- Core: `Database`, `Controller`.
-- Model: `Product`, `Category`, `User`, `Order`.
-- Frontend controller: `ProductController` (danh mục sản phẩm tại trang chủ), `CartController`, `AuthController`, `OrderController`.
-- Backend controller: `AdminDashboardController`, `AdminProductController`, `AdminCategoryController`, `AdminOrderController`.
+- `app/Controllers/`: tiếp nhận request và điều phối giữa model, service và view.
+- `app/Controllers/Admin/`: controller xử lý các màn hình quản trị hiện tại.
+- `app/Core/`: lớp controller nền và kết nối PDO.
+- `app/Models/`: truy vấn và thao tác dữ liệu; các manager phục vụ quản trị nằm trong `Admin/`.
+- `app/Services/`: tích hợp dịch vụ bên ngoài, được nhóm theo notification và payment.
+- `app/Views/`: giao diện được nhóm theo chức năng; `layouts/`, `partials/` và `errors/` dùng chung.
+- `config/`: bootstrap và nạp cấu hình môi trường.
+- `database/`: schema, dữ liệu mẫu, migration và bản sao lưu cục bộ.
+- `docs/`: tài liệu yêu cầu, use case, database và kiến trúc.
+- `public/`: document root, front controller, rewrite rules và tài nguyên công khai.
 
-Tên file cụ thể bên trong một số thư mục chưa được nêu đầy đủ; cần giữ quy ước đặt tên thống nhất khi triển khai.
+Các URL được dispatch trong `public/index.php`; dự án hiện chưa có router class riêng. Composer PSR-4 ánh xạ namespace `App\\` tới `app/`.

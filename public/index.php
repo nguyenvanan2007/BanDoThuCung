@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Controllers\NotFoundController;
 use App\Controllers\ProductController;
 use App\Controllers\AuthController;
-use App\Controllers\AdminController;
+use App\Controllers\Admin\AdminController;
 use App\Controllers\CartController;
 use App\Controllers\CheckoutController;
 use App\Controllers\OrderController;

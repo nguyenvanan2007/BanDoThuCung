@@ -33,7 +33,7 @@
     <header class="site-header">
         <a class="brand" href="/" aria-label="TPet - Trang chủ">
             <span class="brand-mark" aria-hidden="true">
-                <img src="/assets/images/tpet-logo.png" alt="">
+                <img src="/assets/images/logo/tpet-logo.png" alt="">
             </span>
             <span>TPet</span>
         </a>
