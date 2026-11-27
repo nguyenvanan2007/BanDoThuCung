@@ -66,3 +66,4 @@ Nếu gửi form tài khoản hiện trang “Dịch vụ tạm thời không kh
 ```powershell
 Get-ChildItem -Recurse -Filter *.php | ForEach-Object { php -l $_.FullName }
 ```
+& 'E:\laragon\bin\php\php-8.1.10-Win32-vs16-x64\php.exe' -S 127.0.0.1:8000 -t public server.php
